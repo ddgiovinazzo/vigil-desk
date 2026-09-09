@@ -28,7 +28,7 @@ class Config:
     # Used by tools/search_knowledge.py and knowledge_sync.py.
     ANYTHINGLLM_BASE_URL = os.environ.get("ANYTHINGLLM_BASE_URL", "http://localhost:3001")
     ANYTHINGLLM_API_KEY = os.environ.get("ANYTHINGLLM_API_KEY", "")
-    ANYTHINGLLM_WORKSPACE = os.environ.get("ANYTHINGLLM_WORKSPACE", "apprentice-kb")
+    ANYTHINGLLM_WORKSPACE = os.environ.get("ANYTHINGLLM_WORKSPACE", "vigildesk-kb")
 
     # --- Reasoning model (llm.py) --------------------------------------------
     # By default we talk to a local Ollama server. If AGENT_API_BASE_URL is

@@ -52,7 +52,7 @@ def test_sync_pushes_unsynced_resolved_tickets_and_stamps_them(app, monkeypatch)
         assert result == {"synced": 1, "failed": 0, "total": 1}
         assert seen["url"] == "http://localhost:3001/api/v1/document/raw-text"
         assert seen["auth"].startswith("Bearer ")
-        assert seen["json"]["addToWorkspaces"] == "apprentice-kb"
+        assert seen["json"]["addToWorkspaces"] == app.config["ANYTHINGLLM_WORKSPACE"]
         assert f"Ticket #{target.id}" in seen["json"]["textContent"]
         assert "Replaced HDMI cable." in seen["json"]["textContent"]
         assert seen["json"]["metadata"]["title"].startswith(f"Resolved Ticket #{target.id}")

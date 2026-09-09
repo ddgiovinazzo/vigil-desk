@@ -33,7 +33,7 @@ python -m scripts.seed_knowledge
 ```
 ANYTHINGLLM_BASE_URL=http://localhost:3001
 ANYTHINGLLM_API_KEY=<real key>
-ANYTHINGLLM_WORKSPACE=apprentice-kb
+ANYTHINGLLM_WORKSPACE=vigildesk-kb
 ```
 
 API paths have been verified on locally running AnythingLLM container using its built-in Swagger (`/api/docs/`), not guesses. Complete pseudocode in `IMPLEMENTATION_PLAN.md`.

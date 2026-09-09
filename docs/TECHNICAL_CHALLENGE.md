@@ -1,9 +1,6 @@
-# Technical Challenge: Grounded Retrieval vs. Knowing When *Not* to Answer
+# Engineering Case Study: Grounded Retrieval vs. Knowing When *Not* to Answer
 
-This is the "one technical challenge and how you solved it" writeup called for in the
-presentation deliverable. It's written honestly: part of this challenge is solved,
-part of it is a known, currently-open problem — which is itself useful material for
-the demo and the Q&A.
+This technical case study explores a critical engineering hurdle in VigilDesk: balancing high retrieval hit rates with strict boundary awareness. In production RAG systems, deciding *whether* an agent should answer is often harder than retrieving relevant context. This document details the solved routing optimizations alongside the nuanced challenge of handling inquiries that require private, user-specific determinations.
 
 ## The challenge
 
@@ -76,17 +73,9 @@ in `agent.py` at all — it's a simpler three-step pipeline. The `should_succeed
 guardrail behavior we want lives entirely in prompt wording right now, not in a
 structural check.
 
-### Why this is worth the demo slot
+### Why this matters for Production Reliability
 
-It's a more interesting story than "we fixed a routing bug": the model isn't failing
-because it can't find information — it's failing because *finding related information
-feels like license to answer*, even when the question needs facts (who is asking,
-what are their dates) that no document can supply. That's a general RAG failure mode,
-not an ApexCare-specific one, and it's a good example to have ready for "how do you
-know it works / how would you debug it?" in the Q&A — the observability log and the
-per-item `reason` field in `last_run.json` are exactly what let us tell items 8 and 17
-apart from the judge-strictness false negatives (items 3, 4, 5, 11) instead of lumping
-all 13 "failures" together.
+This highlights a fundamental dilemma in production agent design: the model isn't failing because it can't find information — it's failing because *finding related information feels like license to answer*, even when the question requires facts (who is asking, what are their specific dates) that no static document can supply. That is a universal RAG failure mode across enterprise systems. Having granular observability telemetry and per-item `reason` diagnostics in `last_run.json` is what enables us to isolate items 8 and 17 as boundary issues rather than conflating them with judge-strictness false negatives (items 3, 4, 5, 11).
 
 ### Proposed next step (not yet implemented)
 

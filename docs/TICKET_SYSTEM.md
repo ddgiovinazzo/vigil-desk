@@ -28,14 +28,14 @@ The **Support Ticket System** provides a complete enterprise ticketing desk for 
 └──────────────────────────────────────┴──────────────────────────────────────┘
                                       │
                                       ▼
-                      SQLite Database (`server/models.py`)
+                      PostgreSQL Database (`server/models.py`)
 ```
 
 ---
 
 ## 🗄️ Database Model (`Ticket`)
 
-Defined in [`server/models.py`](file:///Users/daniel/code/flatiron/RAG-Agentic-Project/server/models.py):
+Defined in [`server/models.py`](../server/models.py):
 
 | Attribute | Type | Constraints / Defaults | Description |
 | :--- | :--- | :--- | :--- |
@@ -53,7 +53,7 @@ Defined in [`server/models.py`](file:///Users/daniel/code/flatiron/RAG-Agentic-P
 
 ## ⚙️ Agentic CRUD Tools (`server/tools/ticket_tools.py`)
 
-Registered in [`server/tools/__init__.py`](file:///Users/daniel/code/flatiron/RAG-Agentic-Project/server/tools/__init__.py):
+Registered in [`server/tools/__init__.py`](../server/tools/__init__.py):
 
 ### 1. `list_tickets`
 - **Confirmation Required:** ❌ `False` (Direct execution)
@@ -87,7 +87,7 @@ To prevent AI hallucination risks or unwanted database modifications:
 
 ## 🤖 Floating AI Triage Assistant Widget
 
-Integrated into the **Tickets Page** ([`client/src/tickets/TicketChatWidget.tsx`](file:///Users/daniel/code/flatiron/RAG-Agentic-Project/client/src/tickets/TicketChatWidget.tsx)):
+Integrated into the **Tickets Page** ([`client/src/tickets/TicketChatWidget.tsx`](../client/src/tickets/TicketChatWidget.tsx)):
 - **Floating Action Button (🤖):** Fixed in the bottom-right corner of the Tickets Desk.
 - **Interactive Assistant Panel:** Opens a 380px popover widget overlaying the page, allowing users to ask the AI agent to list, update, resolve, or delete tickets directly from the Tickets surface.
 - **"Ask AI" Ticket Card Button:** Every ticket card features a **"🤖 Ask AI"** button. Clicking it launches the assistant pre-loaded with a prompt targeting that specific ticket.

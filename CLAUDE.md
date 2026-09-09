@@ -4,36 +4,39 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-A **starter template** for a 4-week apprentice project: build an AI agent (Flask + React) on top of a running RAG service (AnythingLLM). The Flask agent backend exists under `server/` (models, auth, the agent loop, tools, observability, and HTTP routes, with tests in `server/tests`), and the React frontend exists under `client/` (chat UI and agent-trace panel, plus an Audit tab for run exploration with stats/charts and admin inspection of all users' runs via `ADMIN_EMAILS`), following the spec in `README.md` (the requirements doc / definition of done) and the starter backlog in `docs/seed-issues.md`.
+**VigilDesk** is a production-grade, multi-tenant **Autonomous Support Triage Agent** and **RAG Knowledge Service** built with Python/Flask and React/TypeScript (Vite). The backend under `server/` provides a bounded agent loop, dynamic multi-tenant company customization, stateful Human-in-the-Loop (HITL) safety, prompt injection boundaries, tool catalogs, and observability/audit telemetry. The frontend under `client/` provides an enterprise Ticket Triage Workbench, interactive ticket resolution flow, context-aware AI copilot ("Pip"), and an observability Audit Dashboard.
 
 ## Architecture
 
-Two systems that talk to each other:
+Two primary systems:
+1. **Knowledge Service** — AnythingLLM in Docker at `http://localhost:3001`. Documents from `knowledge_base/` are embedded into workspace collections; the agent queries via AnythingLLM's developer API (Bearer auth, workspace chat endpoint).
+2. **The Agent & Application** — Flask backend + React (Vite) frontend. The core is a **bounded agent loop**: the LLM reasons → selects a tool → executes → observes results → repeats until complete or `MAX_AGENT_STEPS` is reached.
 
-1. **Knowledge service (run, not written)** — AnythingLLM in Docker at `http://localhost:3001`. Documents from `knowledge_base/` are embedded into a workspace; the agent queries it via AnythingLLM's developer API (Bearer key auth, workspace chat endpoint).
-2. **The agent (built here)** — Flask backend + React (Vite) frontend. The core is a **bounded agent loop**: the LLM picks a tool → tool executes → LLM observes the result → repeat until done or `MAX_AGENT_STEPS` is hit. One tool is always `search_knowledge(query)` (calls AnythingLLM); at least two more tools per the chosen project option (README §5).
-
-Intended layout (from README):
+Intended layout:
 
 ```
 server/
-├── app.py
-├── agent.py         ← the agent loop (decide → call tool → observe → repeat)
-├── tools/           ← one file per tool
-├── llm.py           ← generate(messages, tools) — the single model interface
-├── observability.py ← decorator logging every LLM/tool call
-└── tests/
-client/              ← React chat UI + agent-trace panel
+├── app.py              ← application factory, blueprints & routes
+├── agent.py            ← the bounded agent loop (decide → execute → observe)
+├── config.py           ← application configuration & environment bindings
+├── models.py           ← SQLAlchemy data models (Tickets, Users, Runs, Tenancy)
+├── prompts.py          ← system prompts & routing classifiers
+├── tools/              ← modular tool implementations (search_knowledge, tickets, escalate)
+├── llm.py              ← unified model interface
+├── observability.py    ← execution telemetry & run step logging
+└── tests/              ← pytest unit and integration test suite
+client/                 ← React (Vite, TypeScript, Material-UI, Emotion)
+docs/                   ← Architecture designs, case studies & eval specs
 ```
 
-### Non-negotiable design rules (from the brief)
+### Core Architectural & Safety Rules
 
-- **Single model interface:** all model calls go through one `generate(messages, tools)` function (`llm.py`). Default model is Ollama `llama3.1:8b` at `localhost:11434`; swapping to a hosted model must be a config change, not a code change.
-- **Single knowledge interface:** all retrieval goes through `search_knowledge(query)` returning `{answer, sources}` — the rest of the agent never touches the AnythingLLM API shape directly.
-- **Guardrails:** max-step cap (`MAX_AGENT_STEPS`, default 6), tool-argument validation with exactly one retry then graceful failure, tool timeouts (`TOOL_TIMEOUT_SECONDS`), and **user confirmation before any consequential action** (create/send/escalate).
-- **Observability:** every LLM call and tool call is logged (messages, tool, args, latency, result) to a JSON file or DB table, viewable per run.
-- **Visible trace:** the UI shows every step (intent, tool, args, result) — this is required, not optional.
-- **Prompt-injection awareness:** tool results are clearly delimited; instructions found inside retrieved documents/tool results are never executed.
+- **Single Model Interface:** All model calls pass through `generate(messages, tools)` in `llm.py`. Models are dynamically swappable via config (Ollama `llama3.1:8b`, OpenAI `gpt-4o-mini`, etc.).
+- **Isolated Knowledge Interface:** Retrieval queries execute through `search_knowledge(query)` returning `{answer, sources}`.
+- **Safety & Guardrails:** Hard iteration cap (`MAX_AGENT_STEPS`), parameter schema validation with single-retry graceful degradation, tool timeouts (`TOOL_TIMEOUT_SECONDS`), and **Human-in-the-Loop (HITL) confirmation** before any consequential action (escalation/creation).
+- **Prompt Injection Boundaries:** External tool outputs are strictly enclosed in `<tool_result>` data envelopes; instructions within retrieved documents are never executed as system directives.
+- **Observability:** Every LLM step and tool call is persisted with latency, status, arguments, and full trace logs for auditability.
+- **Multi-Tenant Isolation:** Dynamic company branding, ticket queues, and knowledge base routing are scoped per tenant.
 - Config lives in `.env` (see `.env.example`); never commit a real `.env`.
 
 ## Commands
@@ -69,14 +72,14 @@ cd client && npm test -- --run src/tests/chat.test.tsx  # single frontend test f
 
 Ports: 3001 = AnythingLLM, 5000 = Flask, 5173 = Vite, 5432 = Postgres, 11434 = Ollama.
 
-## Testing conventions
+## Testing Conventions
 
-- **Mock the model and tools in tests/CI** — CI must not need a running model or a live AnythingLLM. Assert the agent builds the right tool call, parses results, terminates the loop, and catches malformed tool calls — not that the model says a specific thing.
-- Loop termination and stop conditions must have tests.
+- **Mock external model and tool calls in CI** — CI must not need a running model or live AnythingLLM. Assert the agent builds the right tool calls, parses results, terminates the loop, and catches malformed tool calls.
+- Loop termination and stop conditions must have regression tests.
 - CI (GitHub Actions) runs install + lint + tests on every PR; a red build blocks merge.
-- The task-based eval set lives in `docs/eval.md` (8–10 goals including 2–3 the agent should decline); re-run it after prompt/tool/model changes and record results there.
+- The task-based eval set lives in `docs/eval.md`; re-run after prompt/tool/model adjustments.
 
-## Git workflow (from CONTRIBUTING.md)
+## Git Workflow (from CONTRIBUTING.md)
 
-- GitHub Flow: short-lived `feature/<name>` branches off protected `main`; all changes via reviewed PRs (≥1 approval), PRs under ~400 lines, linked to issues with `Closes #N`.
-- **Conventional Commits** (`feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`); small focused commits — if the message needs "and," split it.
+- GitHub Flow: short-lived `feature/<name>` branches off protected `main`; all changes via reviewed PRs (≥1 approval).
+- **Conventional Commits** (`feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`); small focused commits.

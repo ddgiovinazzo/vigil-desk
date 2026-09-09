@@ -36,7 +36,7 @@ class FakeResponse:
 
 
 def test_search_knowledge_parses_answer_and_sources(app, monkeypatch):
-    monkeypatch.setitem(app.config, "ANYTHINGLLM_WORKSPACE", "apprentice-kb")
+    monkeypatch.setitem(app.config, "ANYTHINGLLM_WORKSPACE", "vigildesk-kb")
     payload = {
         "textResponse": "Nimbus Pro costs $8/mo.",
         "sources": [
@@ -63,7 +63,7 @@ def test_search_knowledge_parses_answer_and_sources(app, monkeypatch):
             {"title": "http://kb/doc2", "score": 0.44, "text": "Nimbus Pro includes 10GB storage."},
         ],
     }
-    assert seen["url"] == "http://localhost:3001/api/v1/workspace/apprentice-kb/chat"
+    assert seen["url"] == "http://localhost:3001/api/v1/workspace/vigildesk-kb/chat"
     assert seen["auth"].startswith("Bearer ")
 
 

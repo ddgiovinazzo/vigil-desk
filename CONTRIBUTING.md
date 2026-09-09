@@ -1,99 +1,79 @@
-# Contributing — Git & Team Workflow
+# Contributing to VigilDesk — Engineering & Team Workflow
 
-This is the part of the project that turns "we built an AI app" into "we learned to work like engineers." It's graded as much as the app. Read it on day one and hold each other to it in pull request reviews.
+Thank you for your interest in contributing to **VigilDesk**! We maintain high engineering standards to ensure code quality, test reliability, and production safety across our autonomous agent and multi-tenant RAG services.
+
+Please follow these guidelines when developing, opening pull requests, and contributing.
 
 ---
 
-## Repository setup
-- One `main` branch, **protected**: no direct pushes, PRs only, **at least one approving review** required to merge.
-- A `.gitignore` from day one (`node_modules/`, `__pycache__/`, `.env`, build artifacts, uploaded files, model dumps). One is included in this repo.
-- `.env.example` is committed; the real `.env` (with config) is **never** committed.
-- The README is updated as the project evolves — not written the night before demos.
+## Repository Setup & Standards
+- **Branch Protection:** Production-ready code lives on `main`. Direct pushes to `main` are disabled; all changes require an approved pull request.
+- **Clean Configuration:** Secrets and API keys must **never** be committed. Use `.env.example` as a template for local environment variables.
+- **Documentation:** Documentation and architecture specifications (`docs/`, `README.md`) must be kept up to date alongside functional changes.
 
-## Branching strategy — GitHub Flow
-Keep it simple. This isn't the place for release branches.
-
-```
-main                 ← always deployable, protected
- └─ feature/<name>   ← one branch per issue/feature, short-lived
-```
-
-- Branch off `main`, name it after the work: `feature/pdf-ingestion`, `fix/citation-offsets`, `chore/add-ci`.
-- Keep branches small and short-lived — merge within a day or two, not a week. Long-lived branches cause painful merge conflicts; avoiding that is the lesson.
-- Pull `main` into your branch regularly to stay current.
-
-## Commit conventions
-Small, focused commits with messages that explain *why*. Use Conventional Commits prefixes:
+## Branching Strategy — GitHub Flow
+We adopt a lightweight, trunk-based GitHub Flow:
 
 ```
-feat: add PDF chunking to ingestion pipeline
-fix: correct top-k ordering in similarity search
-chore: configure GitHub Actions test workflow
-docs: document embedding model choice in README
-test: add tests for the retrieval function
-refactor: extract Ollama calls behind a generate() interface
+main                 ← Production-ready, protected
+ └─ feature/<name>   ← Short-lived branch per feature or bug fix
 ```
 
-Rule of thumb: if the commit message needs the word "and," it's probably two commits.
+- Branch names should reflect the work: `feature/multi-tenant-sync`, `fix/kb-routing-classifier`, `chore/add-ci`.
+- Keep branches small and short-lived (merge within 1–2 days) to avoid divergence and merge conflicts.
+- Rebase or merge `main` into your feature branch regularly.
 
-## Pull request workflow
-Every change reaches `main` through a reviewed PR. Use the PR template (`.github/PULL_REQUEST_TEMPLATE.md`).
+## Commit Conventions
+We strictly follow [Conventional Commits](https://www.conventionalcommits.org/) to maintain a clean, semantic changelog:
 
-- **No one merges their own PR without a review.** Everyone authors *and* reviews PRs during the project — reviewing is a skill, not a chore.
-- Reviewers check: does it work, is it readable, are there tests, **are any secrets leaked**, and are edge cases handled (empty document, no chunks found, Ollama timeout).
-- Keep PRs small — ideally under ~400 lines changed. Giant PRs get rubber-stamped, which defeats the purpose.
-- Resolve review comments with follow-up commits, then re-request review.
-- Link the PR to its issue with `Closes #12` so merging auto-closes it.
+```bash
+feat: add dynamic tenant branding and color extraction
+fix: correct query expansion logic in routing classifier
+chore: update GitHub Actions CI pipeline
+docs: document agent evaluation benchmark methodology
+test: add test coverage for agent tool execution guardrails
+refactor: isolate model generation behind unified LLM provider interface
+```
 
-## Code review norms
-- Be kind and specific. Critique the code, not the person. "What happens if retrieval returns zero chunks?" beats "this is wrong."
-- Distinguish blocking comments from suggestions (a `nit:` prefix helps).
-- Authors: don't take it personally — the reviewer caught it before a user did.
-- Review within a few hours during work time so nobody is blocked.
+*Rule of thumb:* Keep commits focused and atomic. If a commit message requires the word "and," consider splitting it into two commits.
 
-## Issue tracking & the board
-- Every meaningful piece of work is an issue before it's a branch. Use the issue template.
-- Board columns: **Backlog → To Do → In Progress → In Review → Done.**
-- One owner per issue at a time; the board reflects reality at standup.
+## Pull Request Workflow
+1. **Use the PR Template:** Fill out the checklist and description in `.github/PULL_REQUEST_TEMPLATE.md`.
+2. **Atomic Changes:** Keep PRs concise and focused (ideally < 400 lines changed) to ensure thorough and efficient code reviews.
+3. **Automated Checks:** All CI workflows (backend tests, frontend tests, linting, type checks) must pass before merging.
+4. **Code Review Standards:**
+   - Reviewers verify architecture alignment, security (no credentials or insecure evals), test coverage, and edge cases.
+   - PR discussions should be constructive, specific, and actionable.
+5. **Issue Linking:** Link related issues using GitHub keywords (e.g., `Closes #42`).
 
-## Continuous Integration
-- A GitHub Actions workflow runs on every PR: install deps, run the linter, run the tests.
-- **A red build blocks the merge.** This is the safety net that makes fast iteration safe.
-- **Mock the model and tool calls in CI** — assert your agent builds the right tool call and parses results correctly. CI shouldn't need a running model or a live AnythingLLM.
-- Start tiny: one workflow that runs `pytest` and `npm test` is enough to teach the concept.
-
-## Testing expectations
-Aiming for the *habit*, not exhaustive coverage:
-- **Backend:** tests for tool functions, argument validation, and the agent loop's stop conditions (with a stubbed model + stubbed tools). Test that the loop terminates and that a malformed tool call is caught — not that the model says a specific thing.
-- **Frontend:** a few component tests (React Testing Library) for the chat and upload flows.
-- A manual QA checklist for the demo path, run before presenting.
+## Continuous Integration & Testing
+- **CI Pipeline:** Automated GitHub Actions workflows run on every pull request to execute `pytest` and `vitest`.
+- **Hermetic Unit Tests:** CI does not require a live AnythingLLM or local Ollama instance. External services and model responses are mocked or stubbed.
+- **Backend Tests:** Verify tool functions, argument schema validation, and agent loop termination/guardrails (`pytest server/tests`).
+- **Frontend Tests:** Ensure UI components, state management, and accessibility standards pass (`npm test` in `client/`).
 
 ## Definition of Done
-A task is done when **all** of these are true:
-- Code is merged to `main` via a reviewed PR
-- It runs correctly following the README setup steps (local dev servers)
-- Tests for it pass in CI
-- It introduces no known regressions in existing features
-- No secrets committed; README/docs updated as needed
+A task or pull request is considered complete when:
+- [x] Code passes all automated CI checks (unit tests, linting, build).
+- [x] Code is reviewed and approved by at least one peer.
+- [x] Verified locally with no regressions introduced.
+- [x] Relevant tests and documentation are included.
+- [x] Zero secrets or unintended configuration committed.
 
-## Ceremonies (keep them short)
-- **Daily standup (10 min):** yesterday / today / blockers.
-- **Sprint planning (start of each week):** move issues into the week's column, assign owners.
-- **Retro (end of weeks 2 and 3):** what went well, what didn't, one change to try.
-
-## Branching cheat-sheet
+## Quick Branching Workflow
 ```bash
-# start a new piece of work
+# Start a new feature or fix
 git checkout main
-git pull
-git checkout -b feature/pdf-ingestion
+git pull origin main
+git checkout -b feature/your-feature-name
 
-# ...make changes, commit in small chunks...
+# Make changes and commit
 git add .
-git commit -m "feat: parse and chunk uploaded PDFs"
-git push -u origin feature/pdf-ingestion
+git commit -m "feat: your concise commit message"
+git push -u origin feature/your-feature-name
 
-# open a PR on GitHub, get a review, merge, then:
+# Open PR, pass CI, merge, and clean up
 git checkout main
-git pull
-git branch 
+git pull origin main
+git branch -d feature/your-feature-name
+```

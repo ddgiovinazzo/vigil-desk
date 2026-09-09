@@ -1,7 +1,6 @@
-# 🎨 Our Company Name — Design System & Brand Key
+# 🎨 VigilDesk — Design System & Brand Key
 
-Welcome to the **Design System**, a standardized UI/UX framework built for the **Support Triage Agent & Observability Surface**.
-
+Welcome to the **VigilDesk Design System**, a standardized UI/UX framework built for the **Support Triage Agent & Observability Surface**.
 
 ---
 
@@ -9,7 +8,7 @@ Welcome to the **Design System**, a standardized UI/UX framework built for the *
 
 1. **Enterprise Technical Authority:** Deep Slate (`#0F172A`) header tones combined with vibrant Indigo (`#4F46E5`) and Electric Cyan (`#06B6D4`) accents create a sleek, corporate-grade AI platform experience.
 2. **Visual Transparency & Observability:** Agent tool executions are color-coded to provide instant visual feedback on what the agent is doing (RAG Search, Ticket Creation, IT Escalations, or LLM Reasoning).
-3. **Consistency Token Architecture:** All components reference centralized tokens from [`client/src/theme.ts`](file:///Users/daniel/code/flatiron/RAG-Agentic-Project/client/src/theme.ts) rather than ad-hoc inline styles.
+3. **Consistency Token Architecture:** All components reference centralized tokens from [`client/src/theme.ts`](../client/src/theme.ts) rather than ad-hoc inline styles.
 
 ---
 

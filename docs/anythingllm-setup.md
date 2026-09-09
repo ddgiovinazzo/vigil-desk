@@ -1,52 +1,49 @@
-# Running the knowledge service (AnythingLLM)
+# Running the Knowledge Service (AnythingLLM)
 
-Project 1 is [AnythingLLM](https://github.com/Mintplex-Labs/anything-llm) — a production-grade open-source RAG app. You **run** it; you don't modify it. Your agent (Project 2) calls its API as the `search_knowledge` tool.
+VigilDesk utilizes [AnythingLLM](https://github.com/Mintplex-Labs/anything-llm) as its underlying containerized vector search and RAG knowledge service. The VigilDesk agent backend queries AnythingLLM via its developer REST API through the `search_knowledge` tool.
 
-## 1. Start it (Docker)
+---
+
+## 1. Start AnythingLLM (Docker)
 
 ```bash
 # STORAGE_DIR is required — without it the container crash-loops on startup.
-# It's documented in .env.example; copy that to .env first (cp .env.example .env).
 docker run -d -p 3001:3001 \
   -e STORAGE_DIR="/app/server/storage" \
   -v anythingllm_storage:/app/server/storage \
   --name anythingllm mintplexlabs/anythingllm
 ```
 
-Open http://localhost:3001 and complete the first-run setup. (Prefer a desktop app? AnythingLLM also ships one — see their repo. Docker is easiest for a shared, reproducible setup.)
+Open http://localhost:3001 and complete the first-run setup.
 
-## 2. Point it at a model
+## 2. LLM Provider Setup
 
-In **Settings → LLM Preference**, choose **Ollama** and the model you pulled (e.g. `llama3.1:8b`). This is the model AnythingLLM uses to *answer* from documents — separate from your agent's reasoning model. Make sure `ollama serve` is running.
+In **Settings → LLM Preference**, choose your preferred provider (e.g. **Ollama** running `llama3.1:8b`, or **OpenAI**). This is the model AnythingLLM uses for embedding synthesis and document Q&A.
 
-## 3. Create a workspace and load documents
+## 3. Create Workspace & Embed Documents
 
-1. Create a workspace named to match `ANYTHINGLLM_WORKSPACE` in your `.env` (e.g. `apprentice-kb`).
-2. Upload the files in [`../knowledge_base/`](../knowledge_base) (or your own corpus) and "Save & Embed" them.
-3. Ask a question in the AnythingLLM UI to confirm retrieval works before you wire up the agent.
+1. Create a workspace matching `ANYTHINGLLM_WORKSPACE` in your `.env` (default: `vigildesk-kb`).
+2. Upload the files in [`../knowledge_base/`](../knowledge_base) and click **"Save & Embed"**.
+3. Verify retrieval in the AnythingLLM web UI.
 
-## 4. Create a developer API key
+## 4. Generate Developer API Key
 
-In **Settings → API Keys**, generate a key and paste it into `.env` as `ANYTHINGLLM_API_KEY`.
+In **Settings → Tools → Developer API**, generate an API key and add it to your `.env` file as `ANYTHINGLLM_API_KEY`.
 
-## 5. Test the API from the command line
+## 5. Verify API Connection
 
-The exact routes are in AnythingLLM's API docs (Settings has a link to the built-in Swagger/API reference). A workspace chat call looks roughly like:
+You can verify workspace communication directly via `curl`:
 
 ```bash
-curl -X POST http://localhost:3001/api/v1/workspace/apprentice-kb/chat \
+curl -X POST http://localhost:3001/api/v1/workspace/vigildesk-kb/chat \
   -H "Authorization: Bearer $ANYTHINGLLM_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"message": "How much does Nimbus Pro cost?", "mode": "query"}'
 ```
 
-You should get back an answer plus source references. **Check the live API reference for the exact path, request body, and response shape** — wrap whatever you find in your `search_knowledge(query)` function so the rest of your agent doesn't care about the details.
+## 6. Fast No-Match Fallback Configuration
 
-> Treat the response shape as something to *verify*, not assume — read the actual JSON once and build your parser around it.
-
-## 6. Optimize Fast No-Match Fallback
-
-To prevent AnythingLLM from stalling when information is absent from your documents:
+To prevent AnythingLLM from hallucinating or stalling when information is absent from policy documents:
 1. In **Workspace Settings → Chat Settings → Workspace System Prompt**, configure:
    > *"Given the following context, answer the user query strictly using the provided documents. If the information is not explicitly found in the retrieved documents, reply immediately with 'NO_POLICY_MATCH: Information not found in policy documents.' Do not attempt to guess or hallucinate."*
-2. In `search_knowledge.py`, the agent automatically appends a `NO_POLICY_MATCH` instruction to queries, allowing Pip to trigger immediate Tier-2 escalation without delay.
+2. In `server/tools/search_knowledge.py`, VigilDesk parses this token to trigger graceful fallbacks or Human-in-the-Loop escalation.

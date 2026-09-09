@@ -104,7 +104,7 @@ class Config:
 
     ANYTHINGLLM_BASE_URL = os.environ.get("ANYTHINGLLM_BASE_URL", "http://localhost:3001")
     ANYTHINGLLM_API_KEY = os.environ.get("ANYTHINGLLM_API_KEY", "")
-    ANYTHINGLLM_WORKSPACE = os.environ.get("ANYTHINGLLM_WORKSPACE", "apprentice-kb")
+    ANYTHINGLLM_WORKSPACE = os.environ.get("ANYTHINGLLM_WORKSPACE", "vigildesk-kb")
 
     OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
     AGENT_MODEL = os.environ.get("AGENT_MODEL", "llama3.1:8b")
@@ -786,7 +786,7 @@ def test_search_knowledge_parses_answer_and_sources(app, monkeypatch):
         "answer": "Nimbus Pro costs $8/mo.",
         "sources": ["nimbus-faq.txt", "http://kb/doc2"],
     }
-    assert seen["url"] == "http://localhost:3001/api/v1/workspace/apprentice-kb/chat"
+    assert seen["url"] == "http://localhost:3001/api/v1/workspace/vigildesk-kb/chat"
     assert seen["auth"].startswith("Bearer ")
 
 

@@ -6,7 +6,7 @@ This document defines the exact operating manual, system prompt, tool guidelines
 
 ## 🎯 System Prompt Configuration
 
-The active system prompt injected into every agent run (located in [`server/agent.py`](file:///Users/daniel/code/flatiron/RAG-Agentic-Project/server/agent.py)):
+The active system prompt injected into every agent run (located in [`server/agent.py`](../server/agent.py)):
 
 ```
 You are an AI Support Triage Agent for our enterprise helpdesk. Work the user's goal with your tools:
