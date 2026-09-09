@@ -9,4 +9,7 @@ def test_action_tools_registered_with_confirmation(app):
     assert validate_arguments("search_knowledge", {"query": "PTO"}) is None
     assert "create_draft" not in TOOLS
     assert "escalate" not in TOOLS
+    assert "create_ticket" not in TOOLS
+    assert "update_ticket" not in TOOLS
+    assert "delete_ticket" not in TOOLS
 

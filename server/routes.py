@@ -12,7 +12,9 @@ Roadmap of this file:
   Tickets (the demo HR helpdesk domain)
     GET   /tickets              list the user's tickets
     GET   /tickets/<id>         single ticket
+    POST  /tickets              create a ticket (human only)
     PATCH /tickets/<id>         edit fields / append a sent reply
+    DELETE /tickets/<id>        delete a ticket (human only)
     POST  /tickets/reset        wipe & reseed demo data
     POST  /tickets/<id>/triage  run the AGENT LOOP on a ticket  <-- key endpoint
 
@@ -621,6 +623,62 @@ def get_ticket(ticket_id):
     return jsonify(_serialize_ticket(ticket))
 
 
+@api_bp.post("/tickets")
+@require_auth
+def create_ticket_endpoint():
+    """Human-only endpoint: Create a new support ticket."""
+    data = request.get_json(silent=True) or {}
+    title = (data.get("title") or "").strip()
+    description = (data.get("description") or "").strip()
+
+    if not title:
+        return jsonify({"error": "Title is required"}), 400
+    if not description:
+        return jsonify({"error": "Description is required"}), 400
+
+    # Auto-generate a sequential human-facing ticket number if not explicitly supplied
+    ticket_number = data.get("ticket_number")
+    if not ticket_number:
+        max_id = db.session.query(func.max(Ticket.id)).scalar() or 1000
+        ticket_number = f"APX-{max_id + 1}"
+
+    user_company = getattr(g.user, "company_name", "ApexCare")
+    domain_slug = re.sub(r"[^a-zA-Z0-9]", "", user_company).lower()
+    email_domain = f"{domain_slug}.com" if domain_slug != "apexcare" else "apexcare.tech"
+
+    req_name = (data.get("requester_name") or "").strip() or "Jane Doe"
+    req_email = (data.get("requester_email") or "").strip() or f"employee@{email_domain}"
+    req_dept = (data.get("requester_department") or "").strip() or "Commercial Operations"
+    status = data.get("status") or "open"
+    priority = data.get("priority") or "medium"
+    category = data.get("category") or "HR & Benefits"
+    channel = data.get("channel") or "Workday Portal"
+    sla = 120
+    if "sla_minutes_remaining" in data and data["sla_minutes_remaining"] is not None:
+        try:
+            sla = int(data["sla_minutes_remaining"])
+        except (ValueError, TypeError):
+            sla = 120
+
+    ticket = Ticket(
+        user_id=g.user.id,
+        ticket_number=ticket_number,
+        requester_name=req_name,
+        requester_email=req_email,
+        requester_department=req_dept,
+        title=title[:120],
+        description=description,
+        status=status,
+        priority=priority,
+        category=category,
+        channel=channel,
+        sla_minutes_remaining=sla,
+    )
+    db.session.add(ticket)
+    db.session.commit()
+    return jsonify(_serialize_ticket(ticket)), 201
+
+
 @api_bp.post("/tickets/reset")
 @require_auth
 def reset_tickets_endpoint():
@@ -679,12 +737,25 @@ def update_ticket_endpoint(ticket_id):
         ticket.title = data["title"].strip()
     if "description" in data and data["description"].strip():
         ticket.description = data["description"].strip()
-    if "status" in data:
+    if "status" in data and data["status"]:
         ticket.status = data["status"]
-    if "priority" in data:
+    if "priority" in data and data["priority"]:
         ticket.priority = data["priority"]
-    if "category" in data:
+    if "category" in data and data["category"]:
         ticket.category = data["category"]
+    if "requester_name" in data and data["requester_name"]:
+        ticket.requester_name = data["requester_name"].strip()
+    if "requester_email" in data and data["requester_email"]:
+        ticket.requester_email = data["requester_email"].strip()
+    if "requester_department" in data and data["requester_department"]:
+        ticket.requester_department = data["requester_department"].strip()
+    if "channel" in data and data["channel"]:
+        ticket.channel = data["channel"]
+    if "sla_minutes_remaining" in data and data["sla_minutes_remaining"] is not None:
+        try:
+            ticket.sla_minutes_remaining = int(data["sla_minutes_remaining"])
+        except (ValueError, TypeError):
+            pass
     if "draft_reply" in data:
         ticket.draft_reply = data["draft_reply"]
     if "escalation_reason" in data:
@@ -711,6 +782,19 @@ def update_ticket_endpoint(ticket_id):
         sync_one_resolved_ticket(ticket)
 
     return jsonify(_serialize_ticket(ticket))
+
+
+@api_bp.delete("/tickets/<int:ticket_id>")
+@require_auth
+def delete_ticket_endpoint(ticket_id):
+    """Human-only endpoint: Permanently delete a support ticket."""
+    ticket = Ticket.query.filter_by(id=ticket_id, user_id=g.user.id).first()
+    if ticket is None:
+        return jsonify({"error": "ticket not found"}), 404
+
+    db.session.delete(ticket)
+    db.session.commit()
+    return jsonify({"success": True, "message": f"Ticket #{ticket_id} deleted successfully."})
 
 
 def _next_run_seq(run_id):

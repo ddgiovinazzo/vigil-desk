@@ -141,10 +141,23 @@ export async function fetchTickets(params?: {
 
 
 
+export async function createTicket(ticketData: Partial<Ticket>): Promise<Ticket> {
+  return apiFetch<Ticket>("/api/tickets", {
+    method: "POST",
+    body: JSON.stringify(ticketData),
+  });
+}
+
 export async function updateTicket(ticketId: number, updates: Partial<Ticket>): Promise<Ticket> {
   return apiFetch<Ticket>(`/api/tickets/${ticketId}`, {
     method: "PATCH",
     body: JSON.stringify(updates),
+  });
+}
+
+export async function deleteTicket(ticketId: number): Promise<{ success: boolean; message: string }> {
+  return apiFetch<{ success: boolean; message: string }>(`/api/tickets/${ticketId}`, {
+    method: "DELETE",
   });
 }
 

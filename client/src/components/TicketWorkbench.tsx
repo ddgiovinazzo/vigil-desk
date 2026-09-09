@@ -15,6 +15,8 @@ interface TicketWorkbenchProps {
   latestRun?: AgentRun | null;
   /** Approve or reject a consequential tool (escalate) */
   onConfirmPending?: (approved: boolean) => void;
+  onEditTicket?: (ticket: Ticket) => void;
+  onDeleteTicket?: (ticket: Ticket) => void;
 }
 
 export const TicketWorkbench: React.FC<TicketWorkbenchProps> = ({
@@ -29,6 +31,8 @@ export const TicketWorkbench: React.FC<TicketWorkbenchProps> = ({
   triagingTickets = {},
   latestRun = null,
   onConfirmPending,
+  onEditTicket,
+  onDeleteTicket,
 }) => {
   const [replyInput, setReplyInput] = useState("");
   // Persistent reply state memory map indexed by ticket ID
@@ -134,54 +138,67 @@ export const TicketWorkbench: React.FC<TicketWorkbenchProps> = ({
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 dark:bg-slate-950/20">
       {/* Top Header Bar */}
-      <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between shadow-xs">
+      <div className="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between gap-3 shadow-xs">
         {/* Left: Employee Info */}
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 text-white font-bold text-sm flex items-center justify-center shadow-md shadow-blue-500/20">
+        <div className="flex items-center space-x-3 min-w-0">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 text-white font-bold text-sm flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
             {ticket.requester_name
               .split(" ")
               .map((n) => n[0])
               .join("")
               .toUpperCase()}
           </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <h2 className="font-bold text-base text-slate-900 dark:text-white">{ticket.requester_name}</h2>
-              <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
-                {ticket.category}
-              </span>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-bold border uppercase tracking-wide ${
-                ticket.priority === "urgent"
-                  ? "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20"
-                  : ticket.priority === "high"
-                  ? "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20"
-                  : ticket.priority === "low"
-                  ? "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20"
-                  : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
-              }`}>
-                {ticket.priority}
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              {ticket.requester_department} • {ticket.requester_email}
+          <div className="min-w-0">
+            <h2 className="font-bold text-base text-slate-900 dark:text-white truncate">
+              {ticket.requester_name}
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">
+              {ticket.requester_department}
             </p>
           </div>
         </div>
 
-        {/* Right: Status Dropdown */}
-        <div className="flex items-center space-x-2">
-          <label className="text-xs text-slate-500 dark:text-slate-400 font-bold">Status:</label>
-          <select
-            value={ticket.status}
-            onChange={(e) => onUpdateTicketStatus(ticket.id, e.target.value as any)}
-            className="text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none cursor-pointer"
-          >
-            <option value="open">Open</option>
-            <option value="in_triage">In Triage</option>
-            <option value="draft_pending">Draft Pending</option>
-            <option value="escalated">Escalated</option>
-            <option value="resolved">Resolved</option>
-          </select>
+        {/* Right: Actions & Status */}
+        <div className="flex items-center space-x-2 shrink-0">
+          {/* Human Edit Button */}
+          {onEditTicket && (
+            <button
+              onClick={() => onEditTicket(ticket)}
+              className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition flex items-center space-x-1.5 border border-slate-200 dark:border-slate-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
+              title="Edit ticket details"
+            >
+              <span>✏️</span>
+              <span>Edit</span>
+            </button>
+          )}
+
+          {/* Human Delete Button */}
+          {onDeleteTicket && (
+            <button
+              onClick={() => onDeleteTicket(ticket)}
+              className="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold transition flex items-center space-x-1.5 border border-rose-500/20 cursor-pointer focus:outline-none focus:ring-2 focus:ring-rose-500"
+              title="Permanently delete this ticket"
+            >
+              <span>🗑️</span>
+              <span>Delete</span>
+            </button>
+          )}
+
+          {/* Status Dropdown */}
+          <div className="flex items-center space-x-1.5 pl-2 border-l border-slate-200 dark:border-slate-700">
+            <label className="text-xs text-slate-500 dark:text-slate-400 font-bold hidden sm:inline">Status:</label>
+            <select
+              value={ticket.status}
+              onChange={(e) => onUpdateTicketStatus(ticket.id, e.target.value as any)}
+              className="text-xs font-bold px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none cursor-pointer"
+            >
+              <option value="open">Open</option>
+              <option value="in_triage">In Triage</option>
+              <option value="draft_pending">Draft Pending</option>
+              <option value="escalated">Escalated</option>
+              <option value="resolved">Resolved</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -189,12 +206,55 @@ export const TicketWorkbench: React.FC<TicketWorkbenchProps> = ({
       <div className="flex-1 flex flex-col justify-between overflow-hidden p-4 md:p-6 space-y-4">
         <div className="flex-1 overflow-y-auto custom-scrollbar space-y-4 pr-1 flex flex-col">
           {/* Ticket Header Title Card */}
-          <div className="bg-white dark:bg-slate-900/80 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1.5 shadow-xs">
-            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold">
-              <span className="font-mono text-blue-600 dark:text-blue-400 font-bold">{ticket.ticket_number}</span>
-              <span>Channel: {ticket.channel} • {ticket.created_at.slice(0, 10)}</span>
+          <div className="bg-white dark:bg-slate-900/80 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400 font-semibold">
+              <div className="flex items-center space-x-2">
+                <span className="font-mono text-blue-600 dark:text-blue-400 font-bold">{ticket.ticket_number}</span>
+                <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
+                  {ticket.category}
+                </span>
+                <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold border uppercase tracking-wide ${
+                  ticket.priority === "urgent"
+                    ? "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20"
+                    : ticket.priority === "high"
+                    ? "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20"
+                    : ticket.priority === "low"
+                    ? "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20"
+                    : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
+                }`}>
+                  {ticket.priority}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2 text-xs">
+                <span className="px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-medium">
+                  {ticket.channel}
+                </span>
+                <span>•</span>
+                <span>{ticket.created_at ? ticket.created_at.slice(0, 10) : "Today"}</span>
+              </div>
             </div>
+
             <h1 className="text-base font-bold text-slate-900 dark:text-white leading-snug">{ticket.title}</h1>
+
+            {/* Requester Contact Strip */}
+            <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center space-x-2">
+                <span className="text-slate-400 dark:text-slate-500 font-medium">Requester:</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200">{ticket.requester_name}</span>
+                <span className="text-slate-300 dark:text-slate-600">•</span>
+                <span className="text-slate-600 dark:text-slate-400 font-medium">{ticket.requester_department}</span>
+              </div>
+              <div className="flex items-center space-x-1.5 font-medium">
+                <span className="text-slate-400 dark:text-slate-500">Email:</span>
+                <a
+                  href={`mailto:${ticket.requester_email}`}
+                  className="text-blue-600 dark:text-blue-400 hover:underline font-mono selection:bg-blue-500/20"
+                  title={`Email ${ticket.requester_name}`}
+                >
+                  {ticket.requester_email}
+                </a>
+              </div>
+            </div>
           </div>
 
           {/* Chat Messages Timeline (Phone App Chat UI) */}

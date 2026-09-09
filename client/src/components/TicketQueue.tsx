@@ -10,6 +10,7 @@ interface TicketQueueProps {
     number,
     { isProcessing: boolean; runId?: number; statusText?: string }
   >;
+  onCreateTicket?: () => void;
 }
 
 export const TicketQueue: React.FC<TicketQueueProps> = ({
@@ -18,6 +19,7 @@ export const TicketQueue: React.FC<TicketQueueProps> = ({
   onSelectTicket,
   isLoading,
   triagingTickets,
+  onCreateTicket,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("All");
@@ -61,6 +63,16 @@ export const TicketQueue: React.FC<TicketQueueProps> = ({
               {filteredTickets.length}
             </span>
           </div>
+          {onCreateTicket && (
+            <button
+              onClick={onCreateTicket}
+              className="px-2.5 py-1 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold transition flex items-center space-x-1 shadow-xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
+              title="Create new support ticket"
+            >
+              <span>+</span>
+              <span>New Ticket</span>
+            </button>
+          )}
         </div>
 
         {/* Search Bar */}
@@ -89,6 +101,8 @@ export const TicketQueue: React.FC<TicketQueueProps> = ({
             <option value="HR & Benefits">HR & Benefits</option>
             <option value="Leaves & Disability">Leaves & Disability</option>
             <option value="Policies & Claims">Policies & Claims</option>
+            <option value="IT Support">IT Support</option>
+            <option value="General">General</option>
           </select>
         </div>
       </div>

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import {
   api,
+  createTicket,
+  deleteTicket,
   fetchRunDetails,
   fetchTickets,
   getCurrentUser,
@@ -10,11 +12,12 @@ import {
 } from "./api";
 import { AuthPage } from "./auth/AuthPage";
 import { AICopilotWidget } from "./components/AICopilotWidget";
-
+import { DeleteConfirmModal } from "./components/DeleteConfirmModal";
 import { Header } from "./components/Header";
 import { KnowledgeInspectorModal } from "./components/KnowledgeInspectorModal";
 import { ObservabilityAuditView } from "./components/ObservabilityAuditView";
 import { PipOnboardingModal } from "./components/PipOnboardingModal";
+import { TicketModal } from "./components/TicketModal";
 import { TicketQueue } from "./components/TicketQueue";
 import { TicketWorkbench } from "./components/TicketWorkbench";
 import { AgentRun, Ticket, UserProfile } from "./types";
@@ -61,6 +64,9 @@ export default function App() {
   const [pendingDraftQuery, setPendingDraftQuery] = useState<string | null>(null);
   const [isPipThinking, setIsPipThinking] = useState<boolean>(false);
   const [isDemo, setIsDemo] = useState<boolean>(() => localStorage.getItem("vigil_is_demo") === "true");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
+  const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
+  const [deletingTicket, setDeletingTicket] = useState<Ticket | null>(null);
 
   // Per-ticket triage processing state map
   interface TicketTriageState {
@@ -222,6 +228,30 @@ export default function App() {
     } finally {
       setIsLoadingTickets(false);
     }
+  };
+
+  const handleCreateTicket = async (ticketData: Partial<Ticket>) => {
+    const fresh = await createTicket(ticketData);
+    setTickets((prev) => [fresh, ...prev]);
+    setSelectedTicket(fresh);
+  };
+
+  const handleEditTicketSubmit = async (ticketData: Partial<Ticket>) => {
+    if (!editingTicket) return;
+    const updated = await updateTicket(editingTicket.id, ticketData);
+    setTickets((prev) => prev.map((t) => (t.id === updated.id ? { ...t, ...updated } : t)));
+    setSelectedTicket((prev) => (prev && prev.id === updated.id ? { ...prev, ...updated } : prev));
+  };
+
+  const handleDeleteTicketConfirm = async (ticketId: number) => {
+    await deleteTicket(ticketId);
+    setTickets((prev) => {
+      const next = prev.filter((t) => t.id !== ticketId);
+      if (selectedTicket?.id === ticketId) {
+        setSelectedTicket(next.length > 0 ? next[0] : null);
+      }
+      return next;
+    });
   };
 
   const handleDraftWithPip = (ticket: Ticket) => {
@@ -451,6 +481,7 @@ export default function App() {
               onSelectTicket={(t) => setSelectedTicket(t)}
               isLoading={isLoadingTickets}
               triagingTickets={triagingTickets}
+              onCreateTicket={() => setIsCreateModalOpen(true)}
             />
           </div>
 
@@ -469,6 +500,8 @@ export default function App() {
               triagingTickets={triagingTickets}
               latestRun={latestRun}
               onConfirmPending={handleConfirmPending}
+              onEditTicket={(t) => setEditingTicket(t)}
+              onDeleteTicket={(t) => setDeletingTicket(t)}
             />
           </div>
 
@@ -491,9 +524,28 @@ export default function App() {
         </div>
       </div>
 
+      {/* Create Ticket Modal */}
+      <TicketModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSubmit={handleCreateTicket}
+      />
 
+      {/* Edit Ticket Modal */}
+      <TicketModal
+        isOpen={Boolean(editingTicket)}
+        initialTicket={editingTicket}
+        onClose={() => setEditingTicket(null)}
+        onSubmit={handleEditTicketSubmit}
+      />
 
-
+      {/* Delete Ticket Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={Boolean(deletingTicket)}
+        ticket={deletingTicket}
+        onClose={() => setDeletingTicket(null)}
+        onConfirmDelete={handleDeleteTicketConfirm}
+      />
 
       {/* Onboarding Tutorial Modal */}
       {showOnboarding && user && (
