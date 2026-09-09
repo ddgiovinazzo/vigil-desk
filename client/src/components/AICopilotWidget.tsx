@@ -21,6 +21,9 @@ interface AICopilotWidgetProps {
   onClearPendingDraftQuery?: () => void;
   onTicketUpdated?: () => void;
   onDraftGenerated?: (draftText: string, ticketId?: number) => void;
+  isMobileDrawer?: boolean;
+  onCloseMobileDrawer?: () => void;
+  onApplyDraftToTicket?: (draftText: string) => void;
 }
 
 interface ChatMessage {
@@ -131,6 +134,9 @@ export const AICopilotWidget: React.FC<AICopilotWidgetProps> = ({
   onClearPendingDraftQuery,
   onTicketUpdated,
   onDraftGenerated,
+  isMobileDrawer = false,
+  onCloseMobileDrawer,
+  onApplyDraftToTicket,
 }) => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
@@ -496,9 +502,14 @@ export const AICopilotWidget: React.FC<AICopilotWidgetProps> = ({
   };
 
   return (
-    <div className="w-80 xl:w-96 h-full border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 flex flex-col overflow-hidden">
+    <div className={`${isMobileDrawer ? "w-full" : "w-full md:w-80 xl:w-96"} h-full md:border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col overflow-hidden`}>
+      {/* Mobile Drawer Grab Handle */}
+      {isMobileDrawer && (
+        <div className="w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto mt-2.5 shrink-0"></div>
+      )}
+
       {/* Header */}
-      <div className="pt-5 pb-4 px-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+      <div className="pt-4 pb-3.5 px-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0">
         <div className="flex items-center space-x-3 min-w-0">
           {/* Animated Interactive Pip Avatar */}
           <PipAvatar status={status} size="md" />
@@ -513,7 +524,7 @@ export const AICopilotWidget: React.FC<AICopilotWidgetProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons: History & New Conversation */}
+        {/* Action Buttons: History & New Conversation & Close (for mobile drawer) */}
         <div className="flex items-center space-x-1.5 shrink-0">
           <button
             onClick={() => setViewMode(viewMode === "history" ? "chat" : "history")}
@@ -540,8 +551,40 @@ export const AICopilotWidget: React.FC<AICopilotWidgetProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
           </button>
+
+          {onCloseMobileDrawer && (
+            <button
+              onClick={onCloseMobileDrawer}
+              title="Close Drawer"
+              aria-label="Close Drawer"
+              className="p-2 rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition cursor-pointer flex items-center justify-center border border-slate-200/60 dark:border-slate-700/60 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              ✕
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Contextual Active Ticket Banner */}
+      {activeTicket && (
+        <div className="px-4 py-2 bg-blue-50/90 dark:bg-blue-950/40 border-b border-blue-200/80 dark:border-blue-800/60 flex items-center justify-between text-xs shrink-0">
+          <div className="flex items-center space-x-1.5 min-w-0 pr-2">
+            <span className="font-bold text-blue-700 dark:text-blue-400 shrink-0">Active:</span>
+            <span className="text-slate-700 dark:text-slate-300 truncate font-semibold">
+              {activeTicket.ticket_number} - {activeTicket.title}
+            </span>
+          </div>
+          {activeTicket.draft_reply && onApplyDraftToTicket && (
+            <button
+              onClick={() => onApplyDraftToTicket(activeTicket.draft_reply!)}
+              className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] shrink-0 shadow-xs cursor-pointer flex items-center space-x-1 transition"
+            >
+              <span>Apply Draft</span>
+              <span>→</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Main View: History Panel vs Active Chat */}
       {viewMode === "history" ? (

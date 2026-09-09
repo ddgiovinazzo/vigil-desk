@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import { AgentRun, Ticket } from "../types";
+import { AgentRun, Ticket, UserProfile } from "../types";
 
 interface TicketWorkbenchProps {
   ticket: Ticket | null;
+  user?: UserProfile | null;
   onDraftWithPip?: (ticket: Ticket) => void;
   isPipProcessing?: boolean;
   onRunTriage?: (ticket: Ticket) => void;
@@ -17,10 +18,12 @@ interface TicketWorkbenchProps {
   onConfirmPending?: (approved: boolean) => void;
   onEditTicket?: (ticket: Ticket) => void;
   onDeleteTicket?: (ticket: Ticket) => void;
+  onBackToQueue?: () => void;
 }
 
 export const TicketWorkbench: React.FC<TicketWorkbenchProps> = ({
   ticket,
+  user,
   onDraftWithPip,
   isPipProcessing = false,
   onRunTriage,
@@ -33,12 +36,27 @@ export const TicketWorkbench: React.FC<TicketWorkbenchProps> = ({
   onConfirmPending,
   onEditTicket,
   onDeleteTicket,
+  onBackToQueue,
 }) => {
   const [replyInput, setReplyInput] = useState("");
   // Persistent reply state memory map indexed by ticket ID
   const [ticketDrafts, setTicketDrafts] = useState<Record<number, string>>({});
   const lastSeenDrafts = useRef<Record<number, string | null | undefined>>({});
   const ticketChatEndRef = useRef<HTMLDivElement | null>(null);
+
+  const userInitials = user?.full_name
+    ? user.full_name
+        .split(" ")
+        .map((n) => n[0])
+        .filter(Boolean)
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : "AV";
+
+  const userDisplayName = user?.full_name
+    ? `${user.full_name} (${user.role_title || "HR Specialist"})`
+    : "Alexandra Vance (HR Specialist)";
 
   const [isEditingResolution, setIsEditingResolution] = useState(false);
   const [tempResolutionNotes, setTempResolutionNotes] = useState("");
@@ -137,11 +155,41 @@ export const TicketWorkbench: React.FC<TicketWorkbenchProps> = ({
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 dark:bg-slate-950/20">
+      {/* Mobile Back to Tickets Navigation Bar */}
+      {onBackToQueue && (
+        <div className="md:hidden px-4 py-2.5 bg-slate-100 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
+          <button
+            onClick={onBackToQueue}
+            className="flex items-center space-x-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 cursor-pointer py-1 pr-2"
+            aria-label="Back to Tickets"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span>Tickets</span>
+          </button>
+          <div className="flex items-center space-x-2">
+            <span className="font-mono text-[11px] font-bold text-slate-500 dark:text-slate-400">
+              {ticket.ticket_number}
+            </span>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+              ticket.status === "open"
+                ? "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400"
+                : ticket.status === "resolved"
+                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
+                : "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400"
+            }`}>
+              {ticket.status.replace("_", " ")}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Top Header Bar */}
-      <div className="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between gap-3 shadow-xs">
+      <div className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 shadow-xs shrink-0">
         {/* Left: Employee Info */}
         <div className="flex items-center space-x-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 text-white font-bold text-sm flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 text-white font-bold text-xs sm:text-sm flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
             {ticket.requester_name
               .split(" ")
               .map((n) => n[0])
@@ -149,10 +197,10 @@ export const TicketWorkbench: React.FC<TicketWorkbenchProps> = ({
               .toUpperCase()}
           </div>
           <div className="min-w-0">
-            <h2 className="font-bold text-base text-slate-900 dark:text-white truncate">
+            <h2 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white truncate">
               {ticket.requester_name}
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">
+            <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate">
               {ticket.requester_department}
             </p>
           </div>
@@ -289,7 +337,7 @@ export const TicketWorkbench: React.FC<TicketWorkbenchProps> = ({
                     </p>
                   </div>
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
-                    AV
+                    {userInitials}
                   </div>
                 </div>
               ))
@@ -297,7 +345,7 @@ export const TicketWorkbench: React.FC<TicketWorkbenchProps> = ({
               <div className="flex space-x-3 items-start justify-end">
                 <div className="bg-blue-600 text-white p-4 rounded-2xl rounded-tr-none max-w-[85%] shadow-md space-y-1">
                   <div className="flex items-center justify-between space-x-4">
-                    <span className="font-bold text-xs text-white">Alexandra Vance (HR Specialist)</span>
+                    <span className="font-bold text-xs text-white">{userDisplayName}</span>
                     <span className="text-[10px] text-white/70 font-mono">Just now</span>
                   </div>
                   <p className="text-xs leading-relaxed font-medium">
@@ -305,7 +353,7 @@ export const TicketWorkbench: React.FC<TicketWorkbenchProps> = ({
                   </p>
                 </div>
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
-                  AV
+                  {userInitials}
                 </div>
               </div>
             ) : null}
@@ -418,7 +466,7 @@ export const TicketWorkbench: React.FC<TicketWorkbenchProps> = ({
         )}
 
         {/* Bottom Phone Chat Reply Box & Sleek Action Bar */}
-        <div className="w-full pt-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-md space-y-3 flex flex-col">
+        <div className="w-full pt-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-md space-y-3 flex flex-col shrink-0">
           <form onSubmit={handleManualSend} className="w-full space-y-3 flex flex-col">
             <div className="relative">
               <textarea
@@ -441,42 +489,42 @@ export const TicketWorkbench: React.FC<TicketWorkbenchProps> = ({
                     handleManualSend(e);
                   }
                 }}
-                className={`w-full p-4 rounded-2xl text-xs sm:text-sm leading-relaxed transition-all min-h-[140px] max-h-[280px] overflow-y-auto custom-scrollbar font-medium ${isTicketTriaging
+                className={`w-full p-3 sm:p-4 rounded-2xl text-xs sm:text-sm leading-relaxed transition-all min-h-[90px] sm:min-h-[130px] max-h-[220px] sm:max-h-[280px] overflow-y-auto custom-scrollbar font-medium ${isTicketTriaging
                     ? "bg-blue-500/10 dark:bg-blue-500/20 border-2 border-blue-500/60 text-blue-700 dark:text-blue-300 font-mono font-bold animate-pulse"
                     : "bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   }`}
               />
             </div>
 
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate max-w-[180px] sm:max-w-xs">
+            <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2">
+              <span className="hidden sm:inline text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate max-w-[180px] sm:max-w-xs">
                 Pip assists with policy retrieval.
               </span>
 
-              <div className="flex items-center space-x-3 ml-auto shrink-0">
+              <div className="flex items-center space-x-2 sm:space-x-3 w-full sm:w-auto justify-between sm:justify-end ml-auto">
                 {/* "Draft with Pip" or "Stop Drafting" Button */}
                 {isTicketTriaging ? (
                   <button
                     type="button"
                     onClick={() => ticket && onStopTriage?.(ticket.id)}
-                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-extrabold text-xs flex items-center space-x-1.5 transition shadow-md cursor-pointer whitespace-nowrap shadow-rose-500/20"
+                    className="flex-1 sm:flex-initial px-3 sm:px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-extrabold text-xs flex items-center justify-center space-x-1.5 transition shadow-md cursor-pointer whitespace-nowrap shadow-rose-500/20"
                   >
                     <span>⏹️</span>
-                    <span>Stop Drafting</span>
+                    <span>Stop</span>
                   </button>
                 ) : (
                   <button
                     type="button"
                     onClick={() => ticket && (onDraftWithPip ? onDraftWithPip(ticket) : onRunTriage?.(ticket))}
                     disabled={!ticket || isPipProcessing || ticket.status === "resolved" || ticket.status === "closed"}
-                    className={`px-4 py-2 rounded-xl font-extrabold text-xs flex items-center space-x-1.5 transition shadow-md whitespace-nowrap ${
+                    className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 rounded-xl font-extrabold text-xs flex items-center justify-center space-x-1.5 transition shadow-md whitespace-nowrap ${
                       !ticket || isPipProcessing || ticket.status === "resolved" || ticket.status === "closed"
                         ? "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-300 dark:border-slate-700 cursor-not-allowed opacity-60 shadow-none"
                         : "bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 text-white hover:opacity-95 shadow-blue-500/25 pulse-glow cursor-pointer"
                     }`}
                   >
                     <span>{isPipProcessing ? "⏳" : "✨"}</span>
-                    <span>{isPipProcessing ? "Drafting with Pip..." : "Draft with Pip"}</span>
+                    <span>{isPipProcessing ? "Drafting..." : "Draft with Pip"}</span>
                   </button>
                 )}
 
@@ -484,7 +532,7 @@ export const TicketWorkbench: React.FC<TicketWorkbenchProps> = ({
                 <button
                   type="submit"
                   disabled={!replyInput.trim() || isTicketTriaging}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-extrabold transition cursor-pointer shadow-md shadow-emerald-500/20 whitespace-nowrap"
+                  className="flex-1 sm:flex-initial px-4 sm:px-5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-extrabold transition cursor-pointer shadow-md shadow-emerald-500/20 whitespace-nowrap"
                 >
                   Send Reply
                 </button>

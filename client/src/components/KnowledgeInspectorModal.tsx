@@ -19,6 +19,7 @@ export const KnowledgeInspectorModal: React.FC<KnowledgeInspectorModalProps> = (
   // Real estate & layout controls
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isFocusMode, setIsFocusMode] = useState(false);
+  const [mobileDocView, setMobileDocView] = useState<"list" | "reader">("list");
 
   // PDF blob state
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
@@ -156,7 +157,7 @@ export const KnowledgeInspectorModal: React.FC<KnowledgeInspectorModalProps> = (
         <div className="flex-1 flex gap-3 md:gap-4 overflow-hidden min-h-0">
           {/* Document List Sidebar */}
           {sidebarOpen && !isFocusMode && (
-            <div className="w-72 sm:w-80 md:w-84 flex flex-col bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 p-3.5 rounded-2xl space-y-2.5 overflow-hidden shadow-xs shrink-0 transition-all duration-200">
+            <div className={`w-full md:w-80 lg:w-84 ${mobileDocView === "list" ? "flex" : "hidden"} md:flex flex-col bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 p-3.5 rounded-2xl space-y-2.5 overflow-hidden shadow-xs shrink-0 transition-all duration-200`}>
               {/* Search Input */}
               <div className="relative">
                 <input
@@ -248,7 +249,10 @@ export const KnowledgeInspectorModal: React.FC<KnowledgeInspectorModalProps> = (
                     return (
                       <div
                         key={doc.filename}
-                        onClick={() => setSelectedDoc(doc)}
+                        onClick={() => {
+                          setSelectedDoc(doc);
+                          setMobileDocView("reader");
+                        }}
                         className={`p-2.5 rounded-xl border text-xs cursor-pointer transition ${
                           isSelected
                             ? "bg-blue-50 dark:bg-blue-500/10 border-blue-500 text-blue-900 dark:text-white font-bold shadow-xs ring-1 ring-blue-500/30"
@@ -274,16 +278,23 @@ export const KnowledgeInspectorModal: React.FC<KnowledgeInspectorModalProps> = (
           )}
 
           {/* Document Content Inspector / Viewer Panel */}
-          <div className="flex-1 flex flex-col bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs min-h-0">
+          <div className={`flex-1 ${mobileDocView === "reader" ? "flex" : "hidden"} md:flex flex-col bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs min-h-0`}>
             {selectedDoc ? (
               <div className="flex-1 flex flex-col overflow-hidden min-h-0">
                 {/* Document Top Bar */}
                 <div className="px-4 py-2.5 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2.5 shrink-0 bg-slate-50/80 dark:bg-slate-900/90">
                   <div className="flex items-center space-x-2.5 min-w-0">
+                    <button
+                      onClick={() => setMobileDocView("list")}
+                      className="md:hidden px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-bold transition flex items-center gap-1 shrink-0"
+                      aria-label="Back to document list"
+                    >
+                      <span>← Docs</span>
+                    </button>
                     {!sidebarOpen && !isFocusMode && (
                       <button
                         onClick={() => setSidebarOpen(true)}
-                        className="px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 text-xs font-semibold transition cursor-pointer flex items-center gap-1 shrink-0"
+                        className="hidden md:flex px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 text-xs font-semibold transition cursor-pointer items-center gap-1 shrink-0"
                         title="Show document list"
                       >
                         <span>📑 Docs ({documents.length})</span>

@@ -35,6 +35,7 @@ export const ObservabilityAuditView: React.FC<ObservabilityAuditViewProps> = ({ 
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [mobileAuditView, setMobileAuditView] = useState<"list" | "trace">("list");
 
   useEffect(() => {
     Promise.all([fetchAllRunAudits(), fetchRunStats()])
@@ -57,6 +58,7 @@ export const ObservabilityAuditView: React.FC<ObservabilityAuditViewProps> = ({ 
   const handleSelectRun = (runId: number) => {
     setSelectedRunId(runId);
     loadDetails(runId);
+    setMobileAuditView("trace");
   };
 
   const filteredRuns = runs.filter((r) => {
@@ -181,7 +183,7 @@ export const ObservabilityAuditView: React.FC<ObservabilityAuditViewProps> = ({ 
           {/* Runs Table & Execution Trace Breakdown Split View */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[450px]">
             {/* Filterable Runs Table */}
-            <div className="lg:col-span-5 flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl overflow-hidden shadow-xs space-y-3">
+            <div className={`lg:col-span-5 ${mobileAuditView === "list" ? "flex" : "hidden"} lg:flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl overflow-hidden shadow-xs space-y-3`}>
               <div className="flex items-center justify-between">
                 <h3 className="font-bold text-xs text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                   Audit Log Runs ({filteredRuns.length})
@@ -211,7 +213,7 @@ export const ObservabilityAuditView: React.FC<ObservabilityAuditViewProps> = ({ 
               />
 
               {/* Runs List */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-1">
+              <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-1 max-h-[500px]">
                 {filteredRuns.map((r) => (
                   <div
                     key={r.id}
@@ -240,14 +242,23 @@ export const ObservabilityAuditView: React.FC<ObservabilityAuditViewProps> = ({ 
             </div>
 
             {/* Detailed Trace Breakdown Inspector */}
-            <div className="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl overflow-y-auto custom-scrollbar space-y-4 shadow-xs">
+            <div className={`lg:col-span-7 ${mobileAuditView === "trace" ? "flex" : "hidden"} lg:flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-6 rounded-2xl overflow-y-auto custom-scrollbar space-y-4 shadow-xs`}>
               {selectedRunDetails ? (
                 <>
-                  <div className="pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                  <div className="pb-3 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                        Agent Run #{selectedRunDetails.id} Trace Breakdown
-                      </h3>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => setMobileAuditView("list")}
+                          className="lg:hidden px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-bold transition flex items-center gap-1 shrink-0"
+                          aria-label="Back to Runs List"
+                        >
+                          <span>← Runs</span>
+                        </button>
+                        <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
+                          Agent Run #{selectedRunDetails.id} Trace Breakdown
+                        </h3>
+                      </div>
                       <p className="text-xs text-slate-600 dark:text-slate-400 font-mono font-medium flex items-center gap-2 mt-1">
                         <span>Status:</span>
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${getStatusBadge(selectedRunDetails.status)}`}>

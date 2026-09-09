@@ -11,6 +11,7 @@ interface TicketQueueProps {
     { isProcessing: boolean; runId?: number; statusText?: string }
   >;
   onCreateTicket?: () => void;
+  onOpenDetail?: () => void;
 }
 
 export const TicketQueue: React.FC<TicketQueueProps> = ({
@@ -20,6 +21,7 @@ export const TicketQueue: React.FC<TicketQueueProps> = ({
   isLoading,
   triagingTickets,
   onCreateTicket,
+  onOpenDetail,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("All");
@@ -119,11 +121,15 @@ export const TicketQueue: React.FC<TicketQueueProps> = ({
             return (
               <div
                 key={ticket.id}
-                onClick={() => onSelectTicket(ticket)}
-                className={`p-3 rounded-xl border transition-all cursor-pointer ${isSelected
+                onClick={() => {
+                  onSelectTicket(ticket);
+                  if (onOpenDetail) onOpenDetail();
+                }}
+                className={`p-3.5 sm:p-3 rounded-2xl sm:rounded-xl border transition-all cursor-pointer touch-manipulation active:scale-[0.99] ${
+                  isSelected
                     ? "bg-blue-50 dark:bg-blue-500/10 border-blue-500 dark:border-blue-500/50 shadow-sm"
                     : "bg-white dark:bg-slate-800/60 border-slate-200 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600"
-                  }`}
+                }`}
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-mono text-[11px] font-bold text-slate-600 dark:text-slate-400">

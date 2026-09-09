@@ -20,6 +20,7 @@ import { PipOnboardingModal } from "./components/PipOnboardingModal";
 import { TicketModal } from "./components/TicketModal";
 import { TicketQueue } from "./components/TicketQueue";
 import { TicketWorkbench } from "./components/TicketWorkbench";
+import { MobileBottomNav, MobileTab } from "./components/MobileBottomNav";
 import { AgentRun, Ticket, UserProfile } from "./types";
 
 export const mapBackendStepToText = (steps: Array<{ kind: string; tool_name?: string }>): string => {
@@ -67,6 +68,11 @@ export default function App() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
   const [deletingTicket, setDeletingTicket] = useState<Ticket | null>(null);
+
+  // Mobile layout state
+  const [mobileTab, setMobileTab] = useState<MobileTab>("tickets");
+  const [mobileTicketView, setMobileTicketView] = useState<"list" | "detail">("list");
+  const [isMobilePipDrawerOpen, setIsMobilePipDrawerOpen] = useState<boolean>(false);
 
   // Per-ticket triage processing state map
   interface TicketTriageState {
@@ -257,6 +263,34 @@ export default function App() {
   const handleDraftWithPip = (ticket: Ticket) => {
     const draftMsg = `Help me write a draft reply to ${ticket.requester_name} for ticket #${ticket.ticket_number || ticket.id} (${ticket.title}):\n\n"${ticket.description}"`;
     setPendingDraftQuery(draftMsg);
+    setIsMobilePipDrawerOpen(true);
+  };
+
+  const handleMobileTabChange = (tab: MobileTab) => {
+    setMobileTab(tab);
+    if (tab === "tickets") {
+      setActiveView("workbench");
+    } else if (tab === "copilot") {
+      setActiveView("workbench");
+      setIsMobilePipDrawerOpen(false);
+    } else if (tab === "knowledge") {
+      setActiveView("knowledge");
+      setIsMobilePipDrawerOpen(false);
+    } else if (tab === "observability") {
+      setActiveView("observability");
+      setIsMobilePipDrawerOpen(false);
+    }
+  };
+
+  const handleHeaderSetActiveView = (view: "workbench" | "observability" | "knowledge") => {
+    setActiveView(view);
+    if (view === "workbench") {
+      setMobileTab("tickets");
+    } else if (view === "knowledge") {
+      setMobileTab("knowledge");
+    } else if (view === "observability") {
+      setMobileTab("observability");
+    }
   };
 
   const handleDraftGenerated = (draftText: string, ticketId?: number) => {
@@ -420,9 +454,11 @@ export default function App() {
 
   const handleSendReply = async (ticketId: number, replyText: string) => {
     try {
+      const senderRole = user?.role_title || "HR Specialist";
+      const senderName = user?.full_name || "Alexandra Vance";
       const newReplyObj = {
         id: `reply_${Date.now()}`,
-        sender: "Alexandra Vance (HR Specialist)",
+        sender: `${senderName} (${senderRole})`,
         text: replyText,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
@@ -454,7 +490,7 @@ export default function App() {
       <Header
         user={user}
         activeView={activeView}
-        setActiveView={setActiveView}
+        setActiveView={handleHeaderSetActiveView}
         darkMode={darkMode}
         setDarkMode={setDarkMode}
         onLogout={handleLogout}
@@ -463,32 +499,40 @@ export default function App() {
       />
 
       {/* Main View Router */}
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="flex-1 flex overflow-hidden relative pb-14 md:pb-0">
         {activeView === "knowledge" && (
-          <KnowledgeInspectorModal onClose={() => setActiveView("workbench")} />
+          <KnowledgeInspectorModal onClose={() => { setActiveView("workbench"); setMobileTab("tickets"); }} />
         )}
         {activeView === "observability" && (
-          <ObservabilityAuditView key={auditResetKey} onClose={() => setActiveView("workbench")} />
+          <ObservabilityAuditView key={auditResetKey} onClose={() => { setActiveView("workbench"); setMobileTab("tickets"); }} />
         )}
 
         {/* Primary Triage Workbench Layout */}
-        <div className={`flex-1 flex flex-row w-full h-full overflow-hidden ${activeView === "workbench" ? "" : "hidden"}`}>
-          {/* Left Ticket Queue Sidebar (~30%) */}
-          <div className="w-80 lg:w-96 shrink-0 h-full overflow-hidden">
+        <div className={`flex-1 flex flex-col md:flex-row w-full h-full overflow-hidden ${activeView === "workbench" ? "" : "hidden"}`}>
+          {/* Left Ticket Queue Sidebar — desktop: 30%, mobile: full screen when mobileTab === 'tickets' and mobileTicketView === 'list' */}
+          <div className={`w-full md:w-80 lg:w-96 shrink-0 h-full overflow-hidden ${
+            mobileTab === "tickets" && mobileTicketView === "list" ? "flex flex-col" : "hidden md:flex md:flex-col"
+          }`}>
             <TicketQueue
               tickets={tickets}
               selectedTicket={selectedTicket}
-              onSelectTicket={(t) => setSelectedTicket(t)}
+              onSelectTicket={(t) => {
+                setSelectedTicket(t);
+              }}
+              onOpenDetail={() => setMobileTicketView("detail")}
               isLoading={isLoadingTickets}
               triagingTickets={triagingTickets}
               onCreateTicket={() => setIsCreateModalOpen(true)}
             />
           </div>
 
-          {/* Center Ticket Workbench Panel (~45%) — min-w-0 prevents intrinsic width layout expansion on remount */}
-          <div className="flex-1 min-w-0 h-full overflow-hidden flex flex-col">
+          {/* Center Ticket Workbench Panel — desktop: 45%, mobile: full screen when mobileTab === 'tickets' and mobileTicketView === 'detail' */}
+          <div className={`flex-1 min-w-0 h-full overflow-hidden flex flex-col ${
+            mobileTab === "tickets" && mobileTicketView === "detail" ? "flex" : "hidden md:flex"
+          }`}>
             <TicketWorkbench
               key={auditResetKey}
+              user={user}
               ticket={selectedTicket || (tickets.length > 0 ? tickets[0] : null)}
               onDraftWithPip={handleDraftWithPip}
               isPipProcessing={isPipThinking}
@@ -502,11 +546,14 @@ export default function App() {
               onConfirmPending={handleConfirmPending}
               onEditTicket={(t) => setEditingTicket(t)}
               onDeleteTicket={(t) => setDeletingTicket(t)}
+              onBackToQueue={() => setMobileTicketView("list")}
             />
           </div>
 
-          {/* Right AI Copilot Assistant (~25%) — shrink-0 prevents width collapse during center panel re-renders */}
-          <div className="w-80 xl:w-96 shrink-0 h-full overflow-hidden">
+          {/* Right AI Copilot Assistant — desktop: 25%, mobile: full screen when mobileTab === 'copilot' */}
+          <div className={`w-full md:w-80 xl:w-96 shrink-0 h-full overflow-hidden ${
+            mobileTab === "copilot" ? "flex flex-col" : "hidden md:flex md:flex-col"
+          }`}>
             <AICopilotWidget
               key={auditResetKey}
               user={user}
@@ -519,10 +566,58 @@ export default function App() {
               onBotThinkingChange={setIsPipThinking}
               onTicketUpdated={loadTickets}
               onDraftGenerated={handleDraftGenerated}
+              onApplyDraftToTicket={(draft) => {
+                handleDraftGenerated(draft, selectedTicket?.id);
+                setMobileTab("tickets");
+                setMobileTicketView("detail");
+              }}
             />
           </div>
         </div>
       </div>
+
+      {/* Mobile Contextual Pip Assistant Drawer (when in ticket detail and tapping "Draft with Pip") */}
+      {isMobilePipDrawerOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="md:hidden fixed inset-0 z-50 flex flex-col justify-end bg-slate-950/60 backdrop-blur-xs animate-fadeIn"
+          onClick={() => setIsMobilePipDrawerOpen(false)}
+        >
+          <div
+            className="w-full h-[85vh] bg-white dark:bg-slate-900 rounded-t-3xl shadow-2xl border-t border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <AICopilotWidget
+              key={`mobile-drawer-${auditResetKey}`}
+              user={user}
+              activeTicket={selectedTicket}
+              tickets={tickets}
+              latestRun={latestRun}
+              isProcessing={selectedTicket ? Boolean(triagingTickets[selectedTicket.id]?.isProcessing) : false}
+              pendingDraftQuery={pendingDraftQuery}
+              onClearPendingDraftQuery={() => setPendingDraftQuery(null)}
+              onBotThinkingChange={setIsPipThinking}
+              onTicketUpdated={loadTickets}
+              onDraftGenerated={handleDraftGenerated}
+              isMobileDrawer={true}
+              onCloseMobileDrawer={() => setIsMobilePipDrawerOpen(false)}
+              onApplyDraftToTicket={(draft) => {
+                handleDraftGenerated(draft, selectedTicket?.id);
+                setIsMobilePipDrawerOpen(false);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Thumb-Accessible Bottom Navigation */}
+      <MobileBottomNav
+        activeTab={mobileTab}
+        onTabChange={handleMobileTabChange}
+        openTicketCount={tickets.filter((t) => t.status === "open").length}
+        isPipThinking={isPipThinking}
+      />
 
       {/* Create Ticket Modal */}
       <TicketModal
