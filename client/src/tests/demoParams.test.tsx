@@ -12,15 +12,15 @@ describe("Demo URL parameters and dynamic customization", () => {
     localStorage.clear();
     // Restore window.location
     delete (window as any).location;
-    window.location = originalLocation;
+    (window as any).location = originalLocation;
   });
 
   function setWindowSearch(search: string) {
     delete (window as any).location;
-    window.location = {
+    (window as any).location = {
       ...originalLocation,
       search,
-    } as any;
+    };
   }
 
   it("formatDemoEmail sanitizes names and formats {first}.{last}@{company}.tech", () => {
@@ -102,7 +102,7 @@ describe("Demo URL parameters and dynamic customization", () => {
     let loginEmail = "";
     stubFetch({
       "POST /api/auth/login": async (req) => {
-        const body = JSON.parse(req.body as string);
+        const body = JSON.parse((req?.body as string) || "{}");
         loginEmail = body.email;
         return jsonResponse({
           token: "jwt-tony",

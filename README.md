@@ -13,6 +13,13 @@
     <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/Database-PostgreSQL_16-336791?style=for-the-badge&logo=postgresql" alt="PostgreSQL" /></a>
     <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License" /></a>
   </p>
+
+  <br/>
+
+  <a href="#-demos--visual-showcase">
+    <img src="./assets/workbench.webp" alt="VigilDesk Unified Triage Cockpit" width="96%" style="border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 8px 30px rgba(0,0,0,0.12);" />
+  </a>
+  <p><i>The VigilDesk Unified Triage Cockpit: Live SLA Ticket Queue, Interactive Ticket Workbench, and Context-Aware Pip AI Copilot.</i></p>
 </div>
 
 
@@ -24,6 +31,7 @@
   <summary><b>📑 Table of Contents (Click to expand)</b></summary>
 
   - [🎥 Demos & Visual Showcase](#-demos--visual-showcase)
+  - [📱 Mobile & Cross-Platform Ergonomics](#-mobile--cross-platform-ergonomics)
   - [🏗️ System Architecture](#️-system-architecture)
   - [🌟 Key Engineering Highlights](#-key-engineering-highlights)
   - [🛡️ AI Safety & Prompt Injection Protection](#️-ai-safety--prompt-injection-protection)
@@ -94,6 +102,41 @@ The embedded **Pip Assistant** serves as an intelligent sidekick equipped with t
 
 ---
 
+## 📱 Mobile & Cross-Platform Ergonomics
+
+> [!IMPORTANT]
+> **Mobile as a First-Class Citizen:** Enterprise support specialists frequently need to triage urgent escalations and approve AI actions while on call or away from their desks. VigilDesk rejects the "desktop afterthought" paradigm in favor of a dedicated **Master-Detail & Hybrid Copilot** mobile architecture designed specifically for thumb accessibility and single-column focus.
+
+<table align="center" width="100%" style="border-collapse: collapse; border: none;">
+  <tr>
+    <td align="center" width="25%" style="vertical-align: top; padding: 6px;">
+      <img src="./assets/mobile_queue.webp" alt="Mobile Ticket Queue" width="100%" style="border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 6px 16px rgba(0,0,0,0.08);" /><br/>
+      <p style="margin-top: 6px;"><b>1. Triage Inbox</b><br/><sub style="color: #64748b;">Full-width cards with SLA timers &amp; priority tags</sub></p>
+    </td>
+    <td align="center" width="25%" style="vertical-align: top; padding: 6px;">
+      <img src="./assets/mobile_detail.webp" alt="Mobile Ticket Detail" width="100%" style="border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 6px 16px rgba(0,0,0,0.08);" /><br/>
+      <p style="margin-top: 6px;"><b>2. Focused Detail</b><br/><sub style="color: #64748b;">Collapsible metadata &amp; locked bottom composer</sub></p>
+    </td>
+    <td align="center" width="25%" style="vertical-align: top; padding: 6px;">
+      <img src="./assets/mobile_pip_drawer.webp" alt="Pip AI Contextual Drawer" width="100%" style="border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 6px 16px rgba(0,0,0,0.08);" /><br/>
+      <p style="margin-top: 6px;"><b>3. 85% Copilot Drawer</b><br/><sub style="color: #64748b;">Contextual grounding &amp; 1-tap "Apply Draft →"</sub></p>
+    </td>
+    <td align="center" width="25%" style="vertical-align: top; padding: 6px;">
+      <img src="./assets/mobile_pip_assistant.webp" alt="Full-Screen Assistant Mode" width="100%" style="border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 6px 16px rgba(0,0,0,0.08);" /><br/>
+      <p style="margin-top: 6px;"><b>4. Full-Screen Pip</b><br/><sub style="color: #64748b;">Dedicated handbook policy Q&amp;A &amp; prompt pills</sub></p>
+    </td>
+  </tr>
+</table>
+
+### 🎯 Key Mobile Engineering Feats
+1. **Fluid Master-Detail Navigation (`Inbox ⇄ Detail`)**: On mobile viewports (`<768px`), the 3-column desktop layout automatically transforms into a 1-column focused view. Tapping any ticket fluidly pushes to the full-screen Ticket Workbench with an instant `← Tickets` header back button.
+2. **Contextual 85% Sliding Copilot Drawer**: Triggering **"✨ Draft with Pip"** from an active ticket does not navigate the specialist away. Instead, a native 85%-height sliding sheet mounts over the conversation, streaming RAG grounding steps and offering a 1-tap **"Apply Draft →"** CTA that populates the reply editor and dismisses the drawer.
+3. **Ergonomic Safe-Area Bottom Bar**: A fixed 4-tab thumb navigation bar (`Tickets`, `Pip AI`, `Knowledge`, `Audit`) engineered with iOS safe-area insets (`env(safe-area-inset-bottom)`), active indicator dots, and live unread ticket badge counts.
+4. **Strict Scroll Containment & Scroll-less Views**: 
+   - Root application container uses `h-screen w-screen overflow-hidden` to eliminate browser-level bouncing, rubber-banding, and double scrollbars.
+   - Headers and bottom action bars remain strictly locked (`shrink-0`). Scrolling is isolated purely to message bodies and policy documents (`overflow-y-auto custom-scrollbar`).
+5. **Multi-Device Matrix**: Audited across iPhones (14 / SE), iPad Portrait (`768x1024`), iPad Landscape (`1024x768`), Standard Desktop (`1440x900`), and 4K / Ultra-wide displays (`2560x1440+`).
+
 ## 🏗️ System Architecture
 
 The application is structured into decoupled, stateless service layers backed by a PostgreSQL database and connected to AnythingLLM via a REST vector index connector:
@@ -141,10 +184,10 @@ flowchart TD
 ## 🌟 Key Engineering Highlights
 
 ### 1. Custom Bounded Agent Loop (No Framework Lock-in)
-* **First-Principles Design:** Built directly in [`server/agent.py`](file:///Users/daniel/code/flatiron/RAG-Agentic-Project/server/agent.py) without heavy black-box orchestrators (e.g. LangChain or AutoGen) to ensure complete transparency.
+* **First-Principles Design:** Built directly in [`server/agent.py`](./server/agent.py) without heavy black-box orchestrators (e.g. LangChain or AutoGen) to ensure complete transparency.
 * **Deterministic Bounds:** Governed by strict step limits (`MAX_AGENT_STEPS = 6`) and tool timeouts (`TOOL_TIMEOUT_SECONDS = 30`) to prevent runaway recursive reasoning loops, hallucinated cycles, or API cost overruns.
 * **Schema Validation & Self-Correction:** Model tool calls are checked against JSON schemas before execution. Schema mismatches trigger a structured error response back to the agent with a 1-retry self-correction cap.
-* **Transient LLM retries:** Timeouts and 429s retry inside [`generate()`](./server/llm.py) with exponential backoff and jitter, capped so retries cannot stall a run for ~60s.
+* **Transient LLM retries:** Timeouts and 429s retry inside [`server/llm.py`](./server/llm.py) with exponential backoff and jitter, capped so retries cannot stall a run for ~60s.
 
 ### 2. Human-in-the-Loop (HITL) Execution Safety
 * **Consequential Actions Guarded:** Critical actions (like writing ticket drafts or routing escalations) are marked as `requires_confirmation = True`. 
@@ -154,13 +197,18 @@ flowchart TD
 * Implements a vector-index retrieval query via AnythingLLM API behind a clean `search_knowledge` tool interface. This decouples the core reasoning engine from vendor-specific vector store architectures.
 
 ### 4. Telemetry & Analytics Dashboard
-* **Decorator Telemetry:** Logging decorators in [`server/observability.py`](file:///Users/daniel/code/flatiron/RAG-Agentic-Project/server/observability.py) capture completion/prompt tokens, model info, execution latency (in milliseconds), tool parameters, and raw JSON logs.
+* **Decorator Telemetry:** Logging decorators in [`server/observability.py`](./server/observability.py) capture completion/prompt tokens, model info, execution latency (in milliseconds), tool parameters, and raw JSON logs.
 * **Provider and error type:** Each run records `provider` (`ollama` or `openai_compatible`); failed steps store `error_type` (`Timeout`, `ConnectionError`, …) so traces can tell which backend served the run and why a call failed.
 * **Analytical UI:** The Audit Dashboard visualizes token volume trends, failure statistics, trace trees, and latency buckets (20%, 50%, 90% latency percentiles).
 
 ### 5. Multi-Tenant Dynamic Company Support (DRY Architecture)
 * **Customizable Enterprise Tenants:** Company branding is a dynamic configuration rather than hardcoded strings. Upon specialist registration, organizations can define their company name (e.g. Acme Corp, ApexCare, or TechCorp).
 * **Contextual Agent Personalization:** Prompts, copilot greetings, fallback templates, and policy citation sentinels dynamically interpolate the active company tenant, seamlessly decoupling core agentic reasoning from specific corporate domains while preserving out-of-the-box demo fidelity.
+
+### 6. Production-Grade Responsive & Mobile Architecture
+* **Hybrid Master-Detail & Contextual Drawers:** Eliminates clumsy responsive squeezing with clean view transitions, iOS safe-area handling (`env(safe-area-inset-bottom)`), and contextual 85% sliding copilot drawers.
+* **Scroll-less Views & Strict Scroll Containment:** Outer window locked with zero rubber-banding or duplicate scrollbars (`overflow-hidden`); internal scrolling strictly isolated to conversation and doc streams.
+* **Automated Multi-Device Test Suite:** Comprehensive Vitest integration coverage for master-detail flows, tab switching, and touch drawer interactions alongside Pytest backend suites.
 
 ---
 
