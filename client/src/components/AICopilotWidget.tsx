@@ -577,7 +577,7 @@ export const AICopilotWidget: React.FC<AICopilotWidgetProps> = ({
           {activeTicket.draft_reply && onApplyDraftToTicket && (
             <button
               onClick={() => onApplyDraftToTicket(activeTicket.draft_reply!)}
-              className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] shrink-0 shadow-xs cursor-pointer flex items-center space-x-1 transition"
+              className="md:hidden px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] shrink-0 shadow-xs cursor-pointer flex items-center space-x-1 transition"
             >
               <span>Apply Draft</span>
               <span>→</span>

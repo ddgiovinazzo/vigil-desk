@@ -149,3 +149,57 @@ test("mobile profile drawer opens from header and shows specialist info", async 
     expect(screen.queryByRole("button", { name: /close profile menu/i })).not.toBeInTheDocument();
   });
 });
+
+test("mobile contextual drawer allows tapping 'Apply Draft' to apply draft and dismiss drawer", async () => {
+  const ticketWithDraft = {
+    ...sampleTicket,
+    draft_reply: "Hi Sarah,\n\nThe FSA rollover maximum is $640.\n\nBest regards,\nHR Support Team",
+    status: "draft_pending",
+  };
+
+  localStorage.setItem("vigil_token", "jwt-mobile-test");
+  stubFetch({
+    "GET /api/auth/me": () => jsonResponse(mockUser),
+    "GET /api/tickets": () => jsonResponse([ticketWithDraft]),
+    "GET /api/conversations": () => jsonResponse([]),
+    "GET /api/knowledge-base": () => jsonResponse([]),
+    "GET /api/runs?page=1&per_page=1": () => jsonResponse({ runs: [] }),
+    "GET /api/stats": () =>
+      jsonResponse({
+        total_runs: 10,
+        active_tickets: 1,
+        success_rate: 90,
+        tool_counts: {},
+        latency_buckets: {},
+        daily_trends: [],
+      }),
+  });
+
+  render(<App />);
+
+  // Open ticket detail
+  const ticketCards = await screen.findAllByText("APX-2042");
+  await userEvent.click(ticketCards[0]);
+
+  // Click "Draft with Pip" to open mobile drawer
+  const draftWithPipBtn = await screen.findByRole("button", { name: /draft with pip/i });
+  await userEvent.click(draftWithPipBtn);
+
+  // Drawer dialog mounts and shows "Apply Draft" button
+  const drawer = await screen.findByRole("dialog");
+  const applyDraftBtn = within(drawer).getByRole("button", { name: /apply draft/i });
+  expect(applyDraftBtn).toBeInTheDocument();
+
+  // Click "Apply Draft"
+  await userEvent.click(applyDraftBtn);
+
+  // Drawer should close
+  await waitFor(() => {
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  // Ticket workbench reply textarea should contain the draft
+  const replyTextarea = screen.getByPlaceholderText(/Write a reply to Sarah/i) as HTMLTextAreaElement;
+  expect(replyTextarea.value).toContain("The FSA rollover maximum is $640");
+});
+
