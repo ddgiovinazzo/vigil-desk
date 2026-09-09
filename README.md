@@ -1,6 +1,6 @@
-# ApexCare: Enterprise Support Triage Agent & RAG Knowledge Service
+# VigilDesk: Autonomous Enterprise Support Triage Agent & RAG Knowledge Service
 
-[![CI Build](https://img.shields.io/github/actions/workflow/status/freeleons/RAG-Agentic-Project/ci.yml?branch=main&style=for-the-badge&logo=github)](https://github.com/freeleons/RAG-Agentic-Project/actions)
+[![CI Build](https://img.shields.io/github/actions/workflow/status/ddgiovinazzo/vigil-desk/ci.yml?branch=main&style=for-the-badge&logo=github)](https://github.com/ddgiovinazzo/vigil-desk/actions)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=for-the-badge&logo=python)](https://python.org)
 [![Flask](https://img.shields.io/badge/Backend-Flask-000000?style=for-the-badge&logo=flask)](https://flask.palletsprojects.com/)
 [![React](https://img.shields.io/badge/Frontend-React_18_--_Vite-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
@@ -9,7 +9,7 @@
 
 > **💡 The Problem:** In enterprise IT and HR operations, support specialists spend up to **40% of their workday** manually hunting down fragmented policy documents across wikis and PDFs. This friction leads to inconsistent answers, slow ticket resolution times, and agent burnout.
 > 
-> **🎯 The Solution:** **ApexCare** is a production-grade, multi-tenant **Autonomous AI Support Triage Agent** and **RAG Knowledge Service** built from first principles using Python/Flask and React (TypeScript). It automates policy retrieval, drafts grounded responses with an embedded copilot (**Pip**), and keeps specialists firmly in control through a **bounded reasoning loop**, **stateful Human-in-the-Loop (HITL) safety**, **prompt injection defense boundaries**, and comprehensive **observability & audit telemetry**.
+> **🎯 The Solution:** **VigilDesk** is a production-grade, multi-tenant **Autonomous AI Support Triage Agent** and **RAG Knowledge Service** built from first principles using Python/Flask and React (TypeScript). It automates policy retrieval, drafts grounded responses with an embedded copilot (**Pip**), and keeps specialists firmly in control through a **bounded reasoning loop**, **stateful Human-in-the-Loop (HITL) safety**, **prompt injection defense boundaries**, **dynamic multi-tenant company customization**, and comprehensive **observability & audit telemetry**.
 
 <details>
   <summary><b>📑 Table of Contents (Click to expand)</b></summary>
@@ -31,7 +31,7 @@
 ## 🎥 Demos & Visual Showcase
 
 > [!TIP]
-> **Core Concept:** Rather than leaving the support specialist in a generic chat interface, ApexCare introduces a unified **Ticket Triage Workbench** dashboard. The agent acts as an embedded assistant directly grounding replies with policy retrieval and compiling draft responses, with every reasoning step audited and trace-logged.
+> **Core Concept:** Rather than leaving the support specialist in a generic chat interface, VigilDesk introduces a unified **Ticket Triage Workbench** dashboard. The agent acts as an embedded assistant directly grounding replies with policy retrieval and compiling draft responses, with every reasoning step audited and trace-logged.
 
 ### 🎬 Live Demo: Copilot Policy Grounding & Reply Drafting
 <div align="center">
@@ -148,6 +148,10 @@ flowchart TD
 * **Decorator Telemetry:** Logging decorators in [`server/observability.py`](file:///Users/daniel/code/flatiron/RAG-Agentic-Project/server/observability.py) capture completion/prompt tokens, model info, execution latency (in milliseconds), tool parameters, and raw JSON logs.
 * **Provider and error type:** Each run records `provider` (`ollama` or `openai_compatible`); failed steps store `error_type` (`Timeout`, `ConnectionError`, …) so traces can tell which backend served the run and why a call failed.
 * **Analytical UI:** The Audit Dashboard visualizes token volume trends, failure statistics, trace trees, and latency buckets (20%, 50%, 90% latency percentiles).
+
+### 5. Multi-Tenant Dynamic Company Support (DRY Architecture)
+* **Customizable Enterprise Tenants:** Company branding is a dynamic configuration rather than hardcoded strings. Upon specialist registration, organizations can define their company name (e.g. Acme Corp, ApexCare, or TechCorp).
+* **Contextual Agent Personalization:** Prompts, copilot greetings, fallback templates, and policy citation sentinels dynamically interpolate the active company tenant, seamlessly decoupling core agentic reasoning from specific corporate domains while preserving out-of-the-box demo fidelity.
 
 ---
 

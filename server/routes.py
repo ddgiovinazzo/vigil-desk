@@ -50,6 +50,10 @@ from server.prompts import (
     PIP_SEARCH_KNOWLEDGE_SYSTEM_PROMPT,
     PIP_DRAFT_SYSTEM_PROMPT,
     PIP_SYSTEM_PROMPT_NO_POLICY_MATCH,
+    get_pip_general_system_prompt,
+    get_pip_search_knowledge_system_prompt,
+    get_pip_draft_system_prompt,
+    get_triage_user_prompt,
 )
 
 
@@ -456,17 +460,25 @@ def confirm_run(run_id):
 # Ticket endpoints
 # --------------------------------------------------------------------------
 
-def seed_apexcare_tickets(user_id):
-    """Insert the five fictional ApexCare demo tickets for a user.
+def seed_apexcare_tickets(user_id, company_name=None):
+    """Insert the five fictional demo tickets for a user.
 
     Called at registration (auth.register) and by /tickets/reset, so every
     account starts with realistic data the agent can triage.
     """
+    if not company_name:
+        u = db.session.get(User, user_id)
+        if u and getattr(u, "company_name", None):
+            company_name = u.company_name
+    company_name = company_name or "ApexCare"
+    domain_slug = re.sub(r"[^a-zA-Z0-9]", "", company_name).lower()
+    email_domain = f"{domain_slug}.com" if domain_slug != "apexcare" else "apexcare.tech"
+
     sample_tickets = [
         {
             "ticket_number": "APX-1049",
             "requester_name": "Jane Doe",
-            "requester_email": "jane.doe@apexcare.tech",
+            "requester_email": f"jane.doe@{email_domain}",
             "requester_department": "Commercial Operations",
             "title": "WEX Healthcare FSA Rollover Limit & Claim Submission",
             "description": "Hi HR team, I recently purchased new prescription eyewear. What is our Healthcare FSA rollover limit and annual contribution maximum, and how do I submit a claim or upload documentation using the WEX mobile app?",
@@ -479,7 +491,7 @@ def seed_apexcare_tickets(user_id):
         {
             "ticket_number": "APX-1048",
             "requester_name": "Marcus Vance",
-            "requester_email": "marcus.vance@apexcare.tech",
+            "requester_email": f"marcus.vance@{email_domain}",
             "requester_department": "Engineering",
             "title": "Qualifying Life Event (QLE) Dependent Enrollment Instructions",
             "description": "Hi HR team, we recently welcomed a new baby! How many days do I have to add my newborn as a dependent, and what are the step-by-step instructions to report a Qualifying Life Event in Employee Navigator?",
@@ -492,7 +504,7 @@ def seed_apexcare_tickets(user_id):
         {
             "ticket_number": "APX-1047",
             "requester_name": "Sarah Connor",
-            "requester_email": "sarah.connor@apexcare.tech",
+            "requester_email": f"sarah.connor@{email_domain}",
             "requester_department": "People Operations",
             "title": "Work From Anywhere (WFA) Remote Work Policy & Home Office Stipend",
             "description": "Hi HR team, I am planning to work remotely from another state next month. How many calendar days per year does our Work From Anywhere (WFA) travel allowance cover, what are our required core collaboration hours, and what is the home office stipend for remote employees?",
@@ -505,7 +517,7 @@ def seed_apexcare_tickets(user_id):
         {
             "ticket_number": "APX-1046",
             "requester_name": "David Miller",
-            "requester_email": "david.miller@apexcare.tech",
+            "requester_email": f"david.miller@{email_domain}",
             "requester_department": "Finance",
             "title": "Replacement UnitedHealthcare Medical ID Card & Temporary Print",
             "description": "Hi HR, I lost my plastic medical ID card while traveling. How can I print a temporary medical ID card right away on myuhc.com and request a physical replacement card?",
@@ -518,7 +530,7 @@ def seed_apexcare_tickets(user_id):
         {
             "ticket_number": "APX-1045",
             "requester_name": "Elena Rostova",
-            "requester_email": "elena.rostova@apexcare.tech",
+            "requester_email": f"elena.rostova@{email_domain}",
             "requester_department": "Product Design",
             "title": "Voluntary Short-Term Disability (STD) Coverage & Elimination Period",
             "description": "Hi HR team, I have an upcoming medical procedure next month. What percentage of salary does Voluntary Short-Term Disability cover, what is the maximum weekly benefit, and what is the elimination period before benefits begin?",
@@ -644,7 +656,8 @@ def reset_tickets_endpoint():
         db.session.commit()
 
         # 5. Reseed fresh sample tickets
-        tickets = seed_apexcare_tickets(g.user.id)
+        user_company = getattr(g.user, "company_name", "ApexCare")
+        tickets = seed_apexcare_tickets(g.user.id, company_name=user_company)
         return jsonify([_serialize_ticket(t) for t in tickets])
 
     except Exception as e:
@@ -779,7 +792,9 @@ def triage_ticket_endpoint(ticket_id):
 
     # Build the actual triage goal (now including the fresh priority) and
     # overwrite the placeholder message so the trace shows the real prompt.
-    user_prompt = TRIAGE_USER_PROMPT.format(
+    user_company = getattr(g.user, "company_name", "ApexCare")
+    triage_tmpl = get_triage_user_prompt(user_company)
+    user_prompt = triage_tmpl.format(
         ticket_number=ticket.ticket_number,
         requester_name=ticket.requester_name,
         requester_department=ticket.requester_department,
@@ -796,7 +811,7 @@ def triage_ticket_endpoint(ticket_id):
 
     # Step 2: the bounded agent loop does the real work.
     try:
-        outcome = run_agent(run, user_prompt)
+        outcome = run_agent(run, user_prompt, company_name=user_company)
     except Exception:
         # Any unexpected crash inside the loop is treated like a failed run
         # and handled by the fallback below.
@@ -826,7 +841,7 @@ def triage_ticket_endpoint(ticket_id):
 
         draft_text = (
             f"Hello {ticket.requester_name.split()[0]},\n\n"
-            f"Thank you for contacting ApexCare Support regarding '{ticket.title}'.\n\n"
+            f"Thank you for contacting {user_company} Support regarding '{ticket.title}'.\n\n"
             f"Our automated triage system is currently experiencing a delay, but your ticket has been securely logged. "
             f"An HR representative will review your request and assist you shortly."
         )
@@ -856,7 +871,7 @@ def triage_ticket_endpoint(ticket_id):
         dept_str = ticket.requester_department or "HR Support"
         draft_text = (
             f"Hi {requester_first},\n\n"
-            f"Thank you for contacting ApexCare Support regarding '{ticket.title}'. "
+            f"Thank you for contacting {user_company} Support regarding '{ticket.title}'. "
             f"I have escalated your request to our {dept_str} specialist team for review.\n\n"
             f"Our team will follow up directly with you shortly with next steps.\n\n"
             f"Best regards,\n"
@@ -1149,23 +1164,24 @@ def pip_chat():
         ).order_by(Message.id.desc()).limit(20).all()[::-1]
     ]
 
+    user_company = getattr(g.user, "company_name", "ApexCare")
     # Step 2: Select the dedicated system prompt based on route_flag
     if route_flag == "GENERAL":
-        system_prompt = PIP_GENERAL_SYSTEM_PROMPT
+        system_prompt = get_pip_general_system_prompt(user_company)
         messages = [
             {"role": "system", "content": system_prompt},
             *history_messages,
             {"role": "user", "content": message_text}
         ]
     elif route_flag == "DRAFT":
-        system_prompt = PIP_DRAFT_SYSTEM_PROMPT
+        system_prompt = get_pip_draft_system_prompt(user_company)
         messages = [
             {"role": "system", "content": system_prompt + tickets_context + kb_context},
             *history_messages,
             {"role": "user", "content": message_text}
         ]
     else:  # SEARCH_KNOWLEDGE
-        system_prompt = PIP_SEARCH_KNOWLEDGE_SYSTEM_PROMPT
+        system_prompt = get_pip_search_knowledge_system_prompt(user_company)
         if no_policy_match:
             system_prompt += PIP_SYSTEM_PROMPT_NO_POLICY_MATCH
         include_tickets = bool(re.search(r"\b(ticket|tickets|apx-|employee)\b", message_text, re.IGNORECASE))
@@ -1241,9 +1257,9 @@ def pip_chat():
         if route_flag == "SEARCH_KNOWLEDGE":
             if is_fake_tool_call or (kb_result and kb_result.get("answer") and content.strip().startswith("{")):
                 if kb_result and kb_result.get("answer"):
-                    content = format_knowledge_answer(kb_result.get("answer"), sources_list)
+                    content = format_knowledge_answer(kb_result.get("answer"), sources_list, company_name=user_company)
             else:
-                content = format_knowledge_answer(content, sources_list)
+                content = format_knowledge_answer(content, sources_list, company_name=user_company)
 
         # 2. Match target ticket & assign draft when in DRAFT route
         target_ticket = None

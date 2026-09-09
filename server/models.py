@@ -52,6 +52,7 @@ class User(db.Model):
     full_name = db.Column(db.String(120), default="Support Specialist")
     department = db.Column(db.String(100), default="HR Operations")
     role_title = db.Column(db.String(100), default="Lead Support Specialist")
+    company_name = db.Column(db.String(120), default="ApexCare")
     created_at = db.Column(db.DateTime(timezone=True), default=utcnow)
 
 
@@ -66,6 +67,7 @@ class Conversation(db.Model):
     updated_at = db.Column(db.DateTime(timezone=True), default=utcnow, onupdate=utcnow)
     # conversation.messages gives the thread in chronological (insertion) order.
     messages = db.relationship("Message", backref="conversation", order_by="Message.id")
+    user = db.relationship("User", backref="conversations")
 
 
 class Message(db.Model):

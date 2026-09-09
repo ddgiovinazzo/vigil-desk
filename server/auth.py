@@ -31,6 +31,7 @@ def register():
     full_name = (data.get("full_name") or "Support Specialist").strip()
     department = (data.get("department") or "HR Operations").strip()
     role_title = (data.get("role_title") or "Lead Support Specialist").strip()
+    company_name = (data.get("company_name") or "ApexCare").strip() or "ApexCare"
 
     if not email or len(password) < 8:
         return jsonify({"error": "email and a password of at least 8 characters are required"}), 400
@@ -43,21 +44,23 @@ def register():
         full_name=full_name,
         department=department,
         role_title=role_title,
+        company_name=company_name,
     )
     db.session.add(user)
     db.session.commit()
 
-    # Give every fresh account the ApexCare sample tickets so the UI has data.
+    # Give every fresh account the sample tickets so the UI has data.
     # Imported here (not at top) to avoid a circular import with routes.py.
     from server.routes import seed_apexcare_tickets
-    seed_apexcare_tickets(user.id)
+    seed_apexcare_tickets(user.id, company_name=company_name)
 
     return jsonify({
         "id": user.id,
         "email": user.email,
         "full_name": user.full_name,
         "department": user.department,
-        "role_title": user.role_title
+        "role_title": user.role_title,
+        "company_name": user.company_name,
     }), 201
 
 
@@ -89,6 +92,7 @@ def login():
             "full_name": user.full_name or "Support Specialist",
             "department": user.department or "HR Operations",
             "role_title": user.role_title or "Lead Support Specialist",
+            "company_name": getattr(user, "company_name", None) or "ApexCare",
             # Admin status is config-driven, not a DB column (see Config.ADMIN_EMAILS).
             "is_admin": user.email in current_app.config["ADMIN_EMAILS"],
         }
@@ -122,6 +126,7 @@ def get_me():
         "full_name": user.full_name or "Support Specialist",
         "department": user.department or "HR Operations",
         "role_title": user.role_title or "Lead Support Specialist",
+        "company_name": getattr(user, "company_name", None) or "ApexCare",
         "is_admin": user.email in current_app.config["ADMIN_EMAILS"],
     })
 

@@ -4,6 +4,7 @@ export interface UserProfile {
   full_name: string;
   department: string;
   role_title: string;
+  company_name?: string;
   is_admin?: boolean;
 }
 

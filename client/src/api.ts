@@ -55,7 +55,7 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string> | undefined),
   };
-  const activeToken = token || localStorage.getItem("apexcare_token");
+  const activeToken = token || localStorage.getItem("vigil_token") || localStorage.getItem("apexcare_token");
   if (activeToken) headers["Authorization"] = `Bearer ${activeToken}`;
   const resp = await fetch(path, { ...options, headers });
   let body: unknown = null;
@@ -89,7 +89,7 @@ function runQuery(filters: RunFilters, includePage: boolean): string {
 
 // Individual named exports for Tailwind components
 export async function login(email: string, password: string): Promise<{ token: string; user: UserProfile }> {
-  const data = await apiFetch<{ token: string; id: number; email: string; full_name: string; department: string; role_title: string; is_admin?: boolean }>("/api/auth/login", {
+  const data = await apiFetch<{ token: string; id: number; email: string; full_name: string; department: string; role_title: string; company_name?: string; is_admin?: boolean }>("/api/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
@@ -99,6 +99,7 @@ export async function login(email: string, password: string): Promise<{ token: s
     full_name: data.full_name,
     department: data.department,
     role_title: data.role_title,
+    company_name: data.company_name,
     is_admin: data.is_admin,
   };
   return { token: data.token, user };
@@ -110,6 +111,7 @@ export async function register(data: {
   full_name: string;
   department: string;
   role_title: string;
+  company_name?: string;
 }): Promise<UserProfile> {
   return apiFetch<UserProfile>("/api/auth/register", {
     method: "POST",

@@ -134,7 +134,7 @@ export const AICopilotWidget: React.FC<AICopilotWidgetProps> = ({
     {
       id: "1",
       sender: "pip",
-      text: `Hello ${user.full_name.split(" ")[0]}! I'm Pip, your ApexCare HR AI Support Assistant. I'm here to help you search company policies, benefits, and draft ticket replies.`,
+      text: `Hello ${user.full_name.split(" ")[0]}! I'm Pip, your ${user.company_name || "ApexCare"} HR AI Support Assistant. I'm here to help you search company policies, benefits, and draft ticket replies.`,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     },
   ]);
@@ -163,7 +163,7 @@ export const AICopilotWidget: React.FC<AICopilotWidgetProps> = ({
     // 2. If we have an active run ID, notify backend to mark it STOPPED
     if (activeRunId) {
       try {
-        const token = localStorage.getItem("apexcare_token");
+        const token = localStorage.getItem("vigil_token") || localStorage.getItem("apexcare_token");
         await fetch(`/api/runs/${activeRunId}/stop`, {
           method: "POST",
           headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -187,7 +187,7 @@ export const AICopilotWidget: React.FC<AICopilotWidgetProps> = ({
 
     const pollInterval = setInterval(async () => {
       try {
-        const token = localStorage.getItem("apexcare_token");
+        const token = localStorage.getItem("vigil_token") || localStorage.getItem("apexcare_token");
         const res = await fetch(`/api/runs/${activeRunId}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
@@ -233,7 +233,7 @@ export const AICopilotWidget: React.FC<AICopilotWidgetProps> = ({
 
   const fetchRunTools = async (runId: number): Promise<ToolActivity[]> => {
     try {
-      const token = localStorage.getItem("apexcare_token");
+      const token = localStorage.getItem("vigil_token") || localStorage.getItem("apexcare_token");
       const res = await fetch(`/api/runs/${runId}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -279,7 +279,7 @@ export const AICopilotWidget: React.FC<AICopilotWidgetProps> = ({
 
     setTimeout(async () => {
       try {
-        const token = localStorage.getItem("apexcare_token");
+        const token = localStorage.getItem("vigil_token") || localStorage.getItem("apexcare_token");
         const res = await fetch("/api/runs?page=1&per_page=1", {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
@@ -301,7 +301,7 @@ export const AICopilotWidget: React.FC<AICopilotWidgetProps> = ({
     const isDraft = Boolean(isExplicitDraft);
 
     try {
-      const token = localStorage.getItem("apexcare_token");
+      const token = localStorage.getItem("vigil_token") || localStorage.getItem("apexcare_token");
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: {
@@ -395,12 +395,13 @@ export const AICopilotWidget: React.FC<AICopilotWidgetProps> = ({
       } else if (lower.includes("draft") || lower.includes("write a reply") || lower.includes("compose a reply") || lower.includes("help me write")) {
         const reqName = activeTicket?.requester_name?.split(" ")[0] || "there";
         let fallbackDraft = "";
+        const company = user.company_name || "ApexCare";
         if (lower.includes("vpn")) {
-          fallbackDraft = `Hi ${reqName},\n\nPlease reset your VPN token at vpn.apexcare.tech and reinstall the GlobalProtect certificate per IT security guidelines.\n\nBest regards,\nHR Support Team`;
+          fallbackDraft = `Hi ${reqName},\n\nPlease reset your VPN token at vpn.${company.toLowerCase().replace(/[^a-z0-9]/g, "")}.com and reinstall the GlobalProtect certificate per IT security guidelines.\n\nBest regards,\nHR Support Team`;
         } else if (lower.includes("fsa") || lower.includes("wex")) {
-          fallbackDraft = `Hi ${reqName},\n\nAccording to ApexCare policy, up to $640 in unused Healthcare FSA funds can roll over into 2026. Claims can be submitted via the Wex Mobile app.\n\nBest regards,\nHR Support Team`;
+          fallbackDraft = `Hi ${reqName},\n\nAccording to ${company} policy, up to $640 in unused Healthcare FSA funds can roll over into 2026. Claims can be submitted via the Wex Mobile app.\n\nBest regards,\nHR Support Team`;
         } else {
-          fallbackDraft = `Hi ${reqName},\n\nThank you for reaching out to HR Support. Your inquiry regarding "${activeTicket?.title || "your ticket"}" has been reviewed per official ApexCare policy.\n\nPlease let us know if you need any additional assistance.\n\nBest regards,\nHR Support Team`;
+          fallbackDraft = `Hi ${reqName},\n\nThank you for reaching out to HR Support. Your inquiry regarding "${activeTicket?.title || "your ticket"}" has been reviewed per official ${company} policy.\n\nPlease let us know if you need any additional assistance.\n\nBest regards,\nHR Support Team`;
         }
         answerText = `I have inserted this response in the reply chat:\n\n"${fallbackDraft}"`;
         onDraftGenerated?.(fallbackDraft, activeTicket?.id);
@@ -433,7 +434,7 @@ export const AICopilotWidget: React.FC<AICopilotWidgetProps> = ({
       {
         id: "1",
         sender: "pip",
-        text: `Hello ${user.full_name.split(" ")[0]}! I'm Pip, your ApexCare HR AI Support Assistant. I'm here to help you search company policies, benefits, and draft ticket replies.`,
+        text: `Hello ${user.full_name.split(" ")[0]}! I'm Pip, your ${user.company_name || "ApexCare"} HR AI Support Assistant. I'm here to help you search company policies, benefits, and draft ticket replies.`,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       },
     ]);

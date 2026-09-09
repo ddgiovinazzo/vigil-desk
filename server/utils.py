@@ -100,8 +100,8 @@ def clean_draft_text(raw_text: str) -> str:
     return text
 
 
-def format_knowledge_answer(raw_answer: str, sources: list = None) -> str:
-    """Pre-render and clean knowledge search queries into natural, friendly markdown."""
+def format_knowledge_answer(raw_answer, sources=None, company_name="ApexCare"):
+    """Clean and polish RAG response for UI display."""
     if not raw_answer:
         return ""
     ans = str(raw_answer).strip()
@@ -113,8 +113,9 @@ def format_knowledge_answer(raw_answer: str, sources: list = None) -> str:
 
     # 2. Check for NO_POLICY_MATCH sentinel
     if "NO_POLICY_MATCH" in ans:
+        org_name = company_name or "ApexCare"
         ans = (
-            "**No matching policy was found in ApexCare documentation for this inquiry.**\n\n"
+            f"**No matching policy was found in {org_name} documentation for this inquiry.**\n\n"
             "Please consult HR / IT leadership directly for guidance on company policies and benefits."
         )
         return ans

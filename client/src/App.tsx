@@ -48,7 +48,7 @@ export const mapBackendStepToText = (steps: Array<{ kind: string; tool_name?: st
 
 
 export default function App() {
-  const [token, setToken] = useState<string | null>(localStorage.getItem("apexcare_token"));
+  const [token, setToken] = useState<string | null>(localStorage.getItem("vigil_token") || localStorage.getItem("apexcare_token"));
   const [user, setUser] = useState<UserProfile | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
@@ -80,7 +80,7 @@ export default function App() {
     if (activeEntries.length === 0) return;
 
     const pollInterval = setInterval(async () => {
-      const token = localStorage.getItem("apexcare_token");
+      const token = localStorage.getItem("vigil_token") || localStorage.getItem("apexcare_token");
 
       for (const [ticketIdStr, state] of activeEntries) {
         if (!state.runId) continue;
@@ -177,6 +177,7 @@ export default function App() {
   };
 
   const handleLoginSuccess = (authToken: string, authUser: UserProfile, isNewOrDemo?: boolean) => {
+    localStorage.setItem("vigil_token", authToken);
     localStorage.setItem("apexcare_token", authToken);
     setToken(authToken);
     setUser(authUser);
@@ -186,6 +187,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem("vigil_token");
     localStorage.removeItem("apexcare_token");
     setToken(null);
     setUser(null);
@@ -345,7 +347,7 @@ export default function App() {
     const runId = triagingTickets[ticketId]?.runId || (selectedTicket?.id === ticketId ? latestRun?.run_id : null);
     if (runId) {
       try {
-        const token = localStorage.getItem("apexcare_token");
+        const token = localStorage.getItem("vigil_token") || localStorage.getItem("apexcare_token");
         await fetch(`/api/runs/${runId}/stop`, {
           method: "POST",
           headers: token ? { Authorization: `Bearer ${token}` } : {},

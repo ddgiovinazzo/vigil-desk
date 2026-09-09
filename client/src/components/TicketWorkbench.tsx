@@ -241,7 +241,7 @@ export const TicketWorkbench: React.FC<TicketWorkbenchProps> = ({
                     <span className="text-[10px] text-white/70 font-mono">Just now</span>
                   </div>
                   <p className="text-xs leading-relaxed font-medium">
-                    {ticket.draft_reply || "Your ticket inquiry has been addressed per official ApexCare policy."}
+                    {ticket.draft_reply || "Your ticket inquiry has been addressed per official company policy."}
                   </p>
                 </div>
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
