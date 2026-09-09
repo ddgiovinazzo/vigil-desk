@@ -7,20 +7,20 @@
     </style>
 
     <!-- Background Radial Ambient Glow behind the Logo -->
-    <radialGradient id="hero-halo" cx="50%" cy="32%" r="48%">
-      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.22" />
-      <stop offset="35%" stop-color="#4f46e5" stop-opacity="0.16" />
-      <stop offset="70%" stop-color="#0f172a" stop-opacity="0.4" />
+    <radialGradient id="hero-halo" cx="50%" cy="30%" r="55%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.25" />
+      <stop offset="30%" stop-color="#4f46e5" stop-opacity="0.2" />
+      <stop offset="65%" stop-color="#0f172a" stop-opacity="0.5" />
       <stop offset="100%" stop-color="#07090e" stop-opacity="1" />
     </radialGradient>
 
     <!-- Side Soft Lighting Accents -->
-    <radialGradient id="side-cyan" cx="88%" cy="15%" r="35%">
-      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.1" />
+    <radialGradient id="side-cyan" cx="90%" cy="15%" r="35%">
+      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.12" />
       <stop offset="100%" stop-color="#06b6d4" stop-opacity="0" />
     </radialGradient>
-    <radialGradient id="side-indigo" cx="12%" cy="85%" r="40%">
-      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.12" />
+    <radialGradient id="side-indigo" cx="10%" cy="85%" r="40%">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.14" />
       <stop offset="100%" stop-color="#6366f1" stop-opacity="0" />
     </radialGradient>
 
@@ -33,7 +33,7 @@
 
     <!-- Subtle Inner Rim Highlight -->
     <linearGradient id="v2-logo-rim" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.45" />
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.5" />
       <stop offset="100%" stop-color="#ffffff" stop-opacity="0.05" />
     </linearGradient>
 
@@ -60,13 +60,13 @@
     <!-- Rich 3D Drop Shadow for the Logo -->
     <filter id="v2-logo-shadow" x="-40%" y="-40%" width="180%" height="180%">
       <feDropShadow dx="0" dy="24" stdDeviation="32" flood-color="#020617" flood-opacity="0.9" />
-      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#38bdf8" flood-opacity="0.3" />
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#38bdf8" flood-opacity="0.35" />
     </filter>
 
     <!-- Pill Background Gradient -->
     <linearGradient id="pill-bg" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#1e293b" stop-opacity="0.75" />
-      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.85" />
+      <stop offset="0%" stop-color="#1e293b" stop-opacity="0.85" />
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.95" />
     </linearGradient>
 
     <!-- Top Horizon Highlight Line -->
@@ -80,7 +80,7 @@
 
     <!-- Subtle Dot Grid Matrix -->
     <pattern id="dot-matrix" width="32" height="32" patternUnits="userSpaceOnUse">
-      <circle cx="16" cy="16" r="1" fill="#475569" fill-opacity="0.25" />
+      <circle cx="16" cy="16" r="1.1" fill="#475569" fill-opacity="0.28" />
     </pattern>
   </defs>
 
@@ -95,11 +95,12 @@
   <rect x="0" y="0" width="1280" height="3" fill="url(#v2-top-line)" />
 
   <!-- Outer Elegant Border Framing -->
-  <rect x="14" y="14" width="1252" height="612" rx="28" fill="none" stroke="#334155" stroke-width="1.2" stroke-opacity="0.35" />
+  <rect x="14" y="14" width="1252" height="612" rx="28" fill="none" stroke="#334155" stroke-width="1.2" stroke-opacity="0.4" />
 
-  <!-- ================= HERO EMBLEM (176x176, Centered at x=640, y=70) ================= -->
-  <g transform="translate(550, 70)" filter="url(#v2-logo-shadow)">
-    <g transform="scale(0.35156)">
+  <!-- ================= HERO EMBLEM (195x195, Centered at x=640, y=55) ================= -->
+  <!-- 512 * 0.38086 = 195px; Offset x = 640 - (195/2) = 542.5 -->
+  <g transform="translate(542.5, 55)" filter="url(#v2-logo-shadow)">
+    <g transform="scale(0.38086)">
       <!-- Squircle Base -->
       <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#v2-logo-bg)" />
       <!-- Subtle Rim Highlight -->
@@ -134,65 +135,65 @@
     </g>
   </g>
 
-  <!-- ================= TYPOGRAPHY (All using .font-brand) ================= -->
-  <!-- Project Title -->
-  <text x="640" y="325" class="font-brand" font-size="64" font-weight="800" fill="#ffffff" text-anchor="middle" letter-spacing="-1.5">
+  <!-- ================= TYPOGRAPHY (Scaled up for bold prominence) ================= -->
+  <!-- Project Title: 78px bold -->
+  <text x="640" y="328" class="font-brand" font-size="78" font-weight="800" fill="#ffffff" text-anchor="middle" letter-spacing="-1.8">
     VigilDesk
   </text>
 
-  <!-- Subtitle / Tagline -->
-  <text x="640" y="375" class="font-brand" font-size="22" font-weight="500" fill="#94a3b8" text-anchor="middle" letter-spacing="-0.2">
+  <!-- Subtitle / Tagline: 26px medium -->
+  <text x="640" y="382" class="font-brand" font-size="26" font-weight="500" fill="#cbd5e1" text-anchor="middle" letter-spacing="-0.3">
     Autonomous Support Triage Agent &amp; Policy RAG Copilot
   </text>
 
-  <!-- ================= SLEEK 3-PILLAR PILL ROW ================= -->
-  <g transform="translate(640, 435)">
-    <!-- Pill 1: Stateful HITL Guard -->
-    <g transform="translate(-365, 0)">
-      <rect width="230" height="46" rx="23" fill="url(#pill-bg)" stroke="#3b82f6" stroke-width="1.2" stroke-opacity="0.35" />
+  <!-- ================= BALANCED 3-PILLAR PILL ROW (Total width 860px) ================= -->
+  <g transform="translate(640, 436)">
+    <!-- Pill 1: Stateful HITL Guard (x = -430 to -160, width 270) -->
+    <g transform="translate(-430, 0)">
+      <rect width="270" height="52" rx="26" fill="url(#pill-bg)" stroke="#3b82f6" stroke-width="1.4" stroke-opacity="0.45" />
       <!-- Vector Shield Icon -->
-      <g transform="translate(20, 13)">
-        <path d="M10 2L3 5v5c0 5 3.5 9 7 10 3.5-1 7-5 7-10V5l-7-3z" fill="none" stroke="#60a5fa" stroke-width="1.6" stroke-linejoin="round" />
-        <path d="M10 2v18c3.5-1 7-5 7-10V5l-7-3z" fill="#60a5fa" fill-opacity="0.35" />
+      <g transform="translate(24, 15)">
+        <path d="M11 2L3 5.5v5.5c0 5.5 4 10 8 11 4-1 8-5.5 8-11V5.5L11 2z" fill="none" stroke="#60a5fa" stroke-width="1.8" stroke-linejoin="round" />
+        <path d="M11 2v22c4-1 8-5.5 8-11V5.5L11 2z" fill="#60a5fa" fill-opacity="0.35" />
       </g>
-      <text x="50" y="28" class="font-brand" font-size="13" font-weight="600" fill="#e2e8f0">
+      <text x="58" y="32" class="font-brand" font-size="15" font-weight="600" fill="#f1f5f9">
         Stateful HITL Guard
       </text>
     </g>
 
-    <!-- Pill 2: Policy-Grounded RAG -->
-    <g transform="translate(-115, 0)">
-      <rect width="230" height="46" rx="23" fill="url(#pill-bg)" stroke="#6366f1" stroke-width="1.2" stroke-opacity="0.35" />
+    <!-- Pill 2: Policy-Grounded RAG (x = -135 to 135, width 270) -->
+    <g transform="translate(-135, 0)">
+      <rect width="270" height="52" rx="26" fill="url(#pill-bg)" stroke="#6366f1" stroke-width="1.4" stroke-opacity="0.45" />
       <!-- Vector Book / RAG Knowledge Icon -->
-      <g transform="translate(20, 13)">
-        <path d="M3 4.5A2.5 2.5 0 0 1 5.5 2H17v16H5.5A2.5 2.5 0 0 0 3 20.5V4.5z" fill="none" stroke="#a5b4fc" stroke-width="1.6" />
-        <path d="M17 18H5.5A2.5 2.5 0 0 1 3 15.5" fill="none" stroke="#a5b4fc" stroke-width="1.6" />
-        <path d="M7 6h6M7 10h6" stroke="#818cf8" stroke-width="1.4" stroke-linecap="round" />
+      <g transform="translate(24, 15)">
+        <path d="M3 4.5A2.5 2.5 0 0 1 5.5 2H19v18H5.5A2.5 2.5 0 0 0 3 22.5V4.5z" fill="none" stroke="#a5b4fc" stroke-width="1.8" />
+        <path d="M19 20H5.5A2.5 2.5 0 0 1 3 17.5" fill="none" stroke="#a5b4fc" stroke-width="1.8" />
+        <path d="M7 7h8M7 11h8" stroke="#818cf8" stroke-width="1.6" stroke-linecap="round" />
       </g>
-      <text x="50" y="28" class="font-brand" font-size="13" font-weight="600" fill="#e2e8f0">
+      <text x="58" y="32" class="font-brand" font-size="15" font-weight="600" fill="#f1f5f9">
         Policy-Grounded RAG
       </text>
     </g>
 
-    <!-- Pill 3: Autonomous Pip Copilot -->
-    <g transform="translate(135, 0)">
-      <rect width="230" height="46" rx="23" fill="url(#pill-bg)" stroke="#06b6d4" stroke-width="1.2" stroke-opacity="0.35" />
+    <!-- Pill 3: Autonomous Pip Copilot (x = 160 to 430, width 270) -->
+    <g transform="translate(160, 0)">
+      <rect width="270" height="52" rx="26" fill="url(#pill-bg)" stroke="#06b6d4" stroke-width="1.4" stroke-opacity="0.45" />
       <!-- Vector Bot / AI Copilot Icon -->
-      <g transform="translate(20, 13)">
-        <rect x="3" y="5" width="14" height="12" rx="3" fill="none" stroke="#22d3ee" stroke-width="1.6" />
-        <circle cx="7" cy="10.5" r="1.2" fill="#22d3ee" />
-        <circle cx="13" cy="10.5" r="1.2" fill="#22d3ee" />
-        <path d="M7.5 14h5" stroke="#22d3ee" stroke-width="1.4" stroke-linecap="round" />
-        <path d="M10 2v3M1 9v4M19 9v4" stroke="#22d3ee" stroke-width="1.4" stroke-linecap="round" />
+      <g transform="translate(24, 15)">
+        <rect x="2" y="5" width="18" height="14" rx="3.5" fill="none" stroke="#22d3ee" stroke-width="1.8" />
+        <circle cx="7" cy="11.5" r="1.5" fill="#22d3ee" />
+        <circle cx="15" cy="11.5" r="1.5" fill="#22d3ee" />
+        <path d="M8 15.5h6" stroke="#22d3ee" stroke-width="1.6" stroke-linecap="round" />
+        <path d="M11 1.5v3.5M0 10v4M22 10v4" stroke="#22d3ee" stroke-width="1.6" stroke-linecap="round" />
       </g>
-      <text x="50" y="28" class="font-brand" font-size="13" font-weight="600" fill="#e2e8f0">
+      <text x="58" y="32" class="font-brand" font-size="15" font-weight="600" fill="#f1f5f9">
         Autonomous Copilot
       </text>
     </g>
   </g>
 
-  <!-- ================= CONSISTENT SUBTLE FOOTER (All using .font-brand) ================= -->
-  <text x="640" y="555" class="font-brand" font-size="12" font-weight="600" fill="#475569" text-anchor="middle" letter-spacing="1.5">
+  <!-- ================= LEGIBLE TECH FOOTER ================= -->
+  <text x="640" y="558" class="font-brand" font-size="13.5" font-weight="600" fill="#64748b" text-anchor="middle" letter-spacing="1.8">
     PYTHON / FLASK • REACT / VITE • POSTGRESQL • ANYTHINGLLM
   </text>
 </svg>
