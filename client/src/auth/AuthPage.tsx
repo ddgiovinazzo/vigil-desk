@@ -6,12 +6,71 @@ interface AuthPageProps {
   onLoginSuccess: (token: string, user: UserProfile, isNewOrDemo?: boolean, isDemo?: boolean) => void;
 }
 
+export function getDemoParamsFromUrl(): { firstName: string; lastName: string; companyName: string } {
+  if (typeof window === "undefined") {
+    return { firstName: "Alexandra", lastName: "Vance", companyName: "ApexCare" };
+  }
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const firstNameParam = params.get("first_name") ?? params.get("firstName");
+    const lastNameParam = params.get("last_name") ?? params.get("lastName");
+    const companyParam =
+      params.get("workspace") ??
+      params.get("company_name") ??
+      params.get("companyName") ??
+      params.get("company");
+    const company = (companyParam || "").trim() || "ApexCare";
+
+    // If both or either first_name / last_name are passed
+    if (firstNameParam !== null || lastNameParam !== null) {
+      const first = (firstNameParam || "").trim();
+      const last = (lastNameParam || "").trim();
+      return {
+        firstName: first || "Alexandra",
+        lastName: last || "Vance",
+        companyName: company,
+      };
+    }
+
+    // Fallback: ?name=First+Last or ?name=First
+    const nameParam = params.get("name");
+    if (nameParam && nameParam.trim()) {
+      const parts = nameParam.trim().split(/\s+/);
+      const first = parts[0] || "Alexandra";
+      const last = parts.slice(1).join(" ") || "Vance";
+      return { firstName: first, lastName: last, companyName: company };
+    }
+
+    return { firstName: "Alexandra", lastName: "Vance", companyName: company };
+  } catch {
+    // Fallback on search params exception
+  }
+
+  return { firstName: "Alexandra", lastName: "Vance", companyName: "ApexCare" };
+}
+
+export function formatDemoEmail(firstName: string, lastName: string, companyName: string = "ApexCare"): string {
+  const cleanFirst = firstName.trim().toLowerCase().replace(/[^a-z0-9]/g, "") || "alexandra";
+  const cleanLast = lastName.trim().toLowerCase().replace(/[^a-z0-9]/g, "") || "vance";
+  const cleanCompany = companyName.trim().toLowerCase().replace(/[^a-z0-9]/g, "") || "apexcare";
+  return `${cleanFirst}.${cleanLast}@${cleanCompany}.tech`;
+}
+
 export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess }) => {
   const [isRegister, setIsRegister] = useState(false);
-  const [email, setEmail] = useState("alexandra.vance@apexcare.tech");
+  const initialDemo = getDemoParamsFromUrl();
+  const [demoFirstName, setDemoFirstName] = useState(initialDemo.firstName);
+  const [demoLastName, setDemoLastName] = useState(initialDemo.lastName);
+  const [demoCompanyName, setDemoCompanyName] = useState(initialDemo.companyName);
+
+  const demoEmail = formatDemoEmail(demoFirstName, demoLastName, demoCompanyName);
+  const demoFullName = `${demoFirstName.trim() || "Alexandra"} ${demoLastName.trim() || "Vance"}`;
+  const effectiveCompany = demoCompanyName.trim() || "ApexCare";
+
+  const [email, setEmail] = useState(demoEmail);
   const [password, setPassword] = useState("password123");
-  const [fullName, setFullName] = useState("Alexandra Vance");
-  const [companyName, setCompanyName] = useState("ApexCare");
+  const [fullName, setFullName] = useState(demoFullName);
+  const [companyName, setCompanyName] = useState(effectiveCompany);
   const [department, setDepartment] = useState("HR Operations");
   const [roleTitle, setRoleTitle] = useState("Lead Support Specialist");
   const [error, setError] = useState<string | null>(null);
@@ -20,12 +79,16 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess }) => {
   const handleDemoLogin = async () => {
     setError(null);
     setLoading(true);
-    const demoEmail = "alexandra.vance@apexcare.tech";
+    const effectiveFirst = demoFirstName.trim() || "Alexandra";
+    const effectiveLast = demoLastName.trim() || "Vance";
+    const effectiveFullName = `${effectiveFirst} ${effectiveLast}`;
+    const effectiveComp = demoCompanyName.trim() || "ApexCare";
+    const effectiveEmail = formatDemoEmail(effectiveFirst, effectiveLast, effectiveComp);
     const demoPassword = "password123";
 
     try {
       // Attempt standard login first
-      const authData = await login(demoEmail, demoPassword);
+      const authData = await login(effectiveEmail, demoPassword);
       localStorage.setItem("vigil_token", authData.token);
       localStorage.setItem("vigil_is_demo", "true");
       onLoginSuccess(authData.token, authData.user, true, true);
@@ -33,14 +96,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess }) => {
       // If account does not exist yet on fresh DB, auto-register then login
       try {
         await register({
-          email: demoEmail,
+          email: effectiveEmail,
           password: demoPassword,
-          full_name: "Alexandra Vance",
-          company_name: "ApexCare",
+          full_name: effectiveFullName,
+          company_name: effectiveComp,
           department: "HR Operations",
           role_title: "Lead Support Specialist",
         });
-        const authData = await login(demoEmail, demoPassword);
+        const authData = await login(effectiveEmail, demoPassword);
         localStorage.setItem("vigil_token", authData.token);
         localStorage.setItem("vigil_is_demo", "true");
         onLoginSuccess(authData.token, authData.user, true, true);
@@ -162,23 +225,87 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess }) => {
             </p>
           </div>
 
-          {/* One-Click Demo Button */}
-          <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-500/30 space-y-2.5 text-center shadow-xs">
-            <div className="flex items-center justify-center space-x-2">
-              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-xs font-bold text-blue-800 dark:text-blue-300 uppercase tracking-wider">Recruiter 1-Click Demo Mode</span>
+          {/* One-Click Demo Button with Dynamic Persona Prefill */}
+          <div className="p-4 rounded-2xl bg-gradient-to-b from-blue-50/80 to-indigo-50/40 dark:from-blue-950/40 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-500/30 space-y-3 text-left shadow-xs">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="text-xs font-bold text-blue-800 dark:text-blue-300 uppercase tracking-wider">
+                  Recruiter 1-Click Demo Mode
+                </span>
+              </div>
+              <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 bg-white/70 dark:bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700">
+                Instant Access
+              </span>
             </div>
-            <p className="text-xs text-slate-700 dark:text-slate-300 font-medium">
-              Launch immediately as <strong>Alexandra Vance</strong> (ApexCare Workspace) with pre-loaded employee tickets.
+
+            <p className="text-xs text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
+              Launch immediately as <strong>{demoFullName}</strong> on the <strong>{effectiveCompany}</strong> workspace with pre-loaded tickets. Launch in 1 click, or customize your persona:
             </p>
+
+            {/* Inline personalization inputs (URL param prefill + customizable) */}
+            <div className="space-y-2 pt-0.5">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label htmlFor="demoFirstName" className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">
+                    First Name
+                  </label>
+                  <input
+                    id="demoFirstName"
+                    type="text"
+                    value={demoFirstName}
+                    onChange={(e) => setDemoFirstName(e.target.value)}
+                    placeholder="Alexandra"
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="demoLastName" className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">
+                    Last Name
+                  </label>
+                  <input
+                    id="demoLastName"
+                    type="text"
+                    value={demoLastName}
+                    onChange={(e) => setDemoLastName(e.target.value)}
+                    placeholder="Vance"
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="demoCompanyName" className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">
+                  Workspace
+                </label>
+                <input
+                  id="demoCompanyName"
+                  type="text"
+                  value={demoCompanyName}
+                  onChange={(e) => setDemoCompanyName(e.target.value)}
+                  placeholder="ApexCare"
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 px-1 font-mono">
+              <span className="truncate" title={demoEmail}>
+                📧 {demoEmail}
+              </span>
+              <span className="shrink-0 text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                {effectiveCompany} HR
+              </span>
+            </div>
+
             <button
               type="button"
               onClick={handleDemoLogin}
               disabled={loading}
-              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:opacity-95 text-slate-950 font-extrabold text-xs shadow-md active:scale-[0.98] transition flex items-center justify-center space-x-2 cursor-pointer"
+              className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:opacity-95 text-slate-950 font-extrabold text-xs shadow-md active:scale-[0.98] transition flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
             >
               <span>⚡</span>
-              <span>Launch Recruiter Demo</span>
+              <span>Launch Recruiter Demo ({demoFirstName.trim() || "Alexandra"})</span>
             </button>
           </div>
 
