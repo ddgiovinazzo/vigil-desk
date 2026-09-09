@@ -1,11 +1,20 @@
-# VigilDesk: Autonomous Enterprise Support Triage Agent & RAG Knowledge Service
+<div align="center">
+  <a href="https://github.com/ddgiovinazzo/vigil-desk">
+    <img src="./assets/logo.svg" alt="VigilDesk Logo" width="96" height="96" />
+  </a>
+  <h1>VigilDesk</h1>
+  <p><strong>Autonomous Enterprise Support Triage Agent &amp; RAG Knowledge Service</strong></p>
 
-[![CI Build](https://img.shields.io/github/actions/workflow/status/ddgiovinazzo/vigil-desk/ci.yml?branch=main&style=for-the-badge&logo=github)](https://github.com/ddgiovinazzo/vigil-desk/actions)
-[![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=for-the-badge&logo=python)](https://python.org)
-[![Flask](https://img.shields.io/badge/Backend-Flask-000000?style=for-the-badge&logo=flask)](https://flask.palletsprojects.com/)
-[![React](https://img.shields.io/badge/Frontend-React_18_--_Vite-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
-[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL_16-336791?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
-[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](./LICENSE)
+  <p>
+    <a href="https://github.com/ddgiovinazzo/vigil-desk/actions"><img src="https://img.shields.io/github/actions/workflow/status/ddgiovinazzo/vigil-desk/ci.yml?branch=main&style=for-the-badge&logo=github" alt="CI Build" /></a>
+    <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.11%2B-blue?style=for-the-badge&logo=python" alt="Python" /></a>
+    <a href="https://flask.palletsprojects.com/"><img src="https://img.shields.io/badge/Backend-Flask-000000?style=for-the-badge&logo=flask" alt="Flask" /></a>
+    <a href="https://react.dev/"><img src="https://img.shields.io/badge/Frontend-React_18_--_Vite-61DAFB?style=for-the-badge&logo=react" alt="React" /></a>
+    <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/Database-PostgreSQL_16-336791?style=for-the-badge&logo=postgresql" alt="PostgreSQL" /></a>
+    <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License" /></a>
+  </p>
+</div>
+
 
 > **💡 The Problem:** In enterprise IT and HR operations, support specialists spend up to **40% of their workday** manually hunting down fragmented policy documents across wikis and PDFs. This friction leads to inconsistent answers, slow ticket resolution times, and agent burnout.
 > 

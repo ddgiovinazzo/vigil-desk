@@ -26,9 +26,11 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="sticky top-0 z-40 px-6 py-3 flex items-center justify-between bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-xs transition-colors duration-200">
       {/* Brand & Organization */}
       <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveView("workbench")}>
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center text-white font-bold shadow-md shadow-blue-500/20 text-sm">
-          🛡️
-        </div>
+        <img
+          src="/favicon.svg"
+          alt="VigilDesk Logo"
+          className="w-8 h-8 rounded-xl shadow-md shadow-blue-500/20 shrink-0"
+        />
         <div className="flex items-center space-x-2">
           <span className="font-bold text-lg tracking-tight text-slate-900 dark:text-white">VigilDesk</span>
           <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">

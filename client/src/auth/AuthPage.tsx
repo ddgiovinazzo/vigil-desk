@@ -93,9 +93,11 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess }) => {
 
         <div>
           <div className="flex items-center space-x-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/30 text-lg">
-              🛡️
-            </div>
+            <img
+              src="/favicon.svg"
+              alt="VigilDesk Logo"
+              className="w-10 h-10 rounded-xl shadow-lg shadow-blue-500/30 shrink-0"
+            />
             <div>
               <span className="font-bold text-2xl tracking-tight text-white">VigilDesk</span>
               <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 uppercase tracking-wide">
@@ -142,6 +144,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess }) => {
       <div className="flex-1 flex flex-col justify-center items-center p-8 lg:p-12">
         <div className="w-full max-w-md space-y-6">
           <div className="space-y-2 text-center lg:text-left">
+            <div className="flex items-center justify-center lg:hidden space-x-2.5 mb-3">
+              <img
+                src="/favicon.svg"
+                alt="VigilDesk Logo"
+                className="w-8 h-8 rounded-xl shadow-md shadow-blue-500/20 shrink-0"
+              />
+              <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white">VigilDesk</span>
+            </div>
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
               {isRegister ? "Create Specialist Account" : "Sign In to VigilDesk"}
             </h2>

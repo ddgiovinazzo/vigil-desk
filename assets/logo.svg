@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient: Blue-600 via Indigo-600 to Cyan-400 -->
+    <linearGradient id="vigil-bg" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="50%" stop-color="#4f46e5" />
+      <stop offset="100%" stop-color="#06b6d4" />
+    </linearGradient>
+
+    <!-- Subtle inner highlight glow on squircle rim -->
+    <linearGradient id="rim-glow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.05" />
+    </linearGradient>
+
+    <!-- Shield Face Lighting -->
+    <linearGradient id="shield-left" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f1f5f9" />
+    </linearGradient>
+    <linearGradient id="shield-right" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e2e8f0" />
+      <stop offset="100%" stop-color="#cbd5e1" />
+    </linearGradient>
+
+    <!-- Inner Core Cutout Gradient -->
+    <linearGradient id="core-left" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+    <linearGradient id="core-right" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e40af" />
+      <stop offset="100%" stop-color="#1e3a8a" />
+    </linearGradient>
+
+    <!-- Drop Shadow Filter for Shield -->
+    <filter id="shield-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#0f172a" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Squircle Base -->
+  <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#vigil-bg)" />
+  
+  <!-- Subtle Border / Rim Glow -->
+  <rect x="25" y="25" width="462" height="462" rx="111" fill="none" stroke="url(#rim-glow)" stroke-width="2" />
+
+  <!-- Shield Group with Shadow -->
+  <g filter="url(#shield-shadow)">
+    <!-- Outer Shield Left Facet -->
+    <path
+      d="M 256 100 C 232 122, 178 134, 124 134 C 122 258, 172 358, 256 414 Z"
+      fill="url(#shield-left)"
+    />
+    
+    <!-- Outer Shield Right Facet -->
+    <path
+      d="M 256 100 C 280 122, 334 134, 388 134 C 390 258, 340 358, 256 414 Z"
+      fill="url(#shield-right)"
+    />
+
+    <!-- Inner Shield Inset (Negative Space / Core Emblem) -->
+    <!-- Left Inset -->
+    <path
+      d="M 256 156 C 240 170, 202 180, 166 180 C 165 264, 198 334, 256 372 Z"
+      fill="url(#core-left)"
+    />
+    <!-- Right Inset -->
+    <path
+      d="M 256 156 C 272 170, 310 180, 346 180 C 347 264, 314 334, 256 372 Z"
+      fill="url(#core-right)"
+    />
+
+    <!-- Center Vigil Star / Sparkle / Glint (Autonomous AI Guardian) -->
+    <!-- Stylized AI Star / Eye in the center -->
+    <path
+      d="M 256 220 Q 256 250, 286 250 Q 256 250, 256 280 Q 256 250, 226 250 Q 256 250, 256 220 Z"
+      fill="#ffffff"
+    />
+  </g>
+</svg>
