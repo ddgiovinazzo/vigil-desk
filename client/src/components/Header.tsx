@@ -9,6 +9,7 @@ interface HeaderProps {
   setDarkMode: (val: boolean) => void;
   onLogout: () => void;
   onReseed: () => void;
+  isDemo?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -19,6 +20,7 @@ export const Header: React.FC<HeaderProps> = ({
   setDarkMode,
   onLogout,
   onReseed,
+  isDemo,
 }) => {
   return (
     <header className="sticky top-0 z-40 px-6 py-3 flex items-center justify-between bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-xs transition-colors duration-200">
@@ -68,15 +70,17 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Right User Identity & Actions */}
       <div className="flex items-center space-x-3">
-        {/* Quick Reseed Button */}
-        <button
-          onClick={onReseed}
-          title="Clear all audit logs, conversations, and reset sample tickets"
-          className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition cursor-pointer border border-slate-200 dark:border-slate-700 flex items-center space-x-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <span>🔄</span>
-          <span>Reset & Reseed</span>
-        </button>
+        {/* Quick Reseed Button (Demo Mode Only) */}
+        {isDemo && (
+          <button
+            onClick={onReseed}
+            title="Clear all audit logs, conversations, and reset sample tickets"
+            className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition cursor-pointer border border-slate-200 dark:border-slate-700 flex items-center space-x-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <span>🔄</span>
+            <span>Reset & Reseed</span>
+          </button>
+        )}
 
         {/* Dark/Light Mode Toggle */}
         <button

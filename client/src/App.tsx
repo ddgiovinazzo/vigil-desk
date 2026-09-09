@@ -60,6 +60,7 @@ export default function App() {
   const [auditResetKey, setAuditResetKey] = useState<number>(0);
   const [pendingDraftQuery, setPendingDraftQuery] = useState<string | null>(null);
   const [isPipThinking, setIsPipThinking] = useState<boolean>(false);
+  const [isDemo, setIsDemo] = useState<boolean>(() => localStorage.getItem("vigil_is_demo") === "true");
 
   // Per-ticket triage processing state map
   interface TicketTriageState {
@@ -176,9 +177,16 @@ export default function App() {
     }
   };
 
-  const handleLoginSuccess = (authToken: string, authUser: UserProfile, isNewOrDemo?: boolean) => {
+  const handleLoginSuccess = (authToken: string, authUser: UserProfile, isNewOrDemo?: boolean, isDemoUser?: boolean) => {
     localStorage.setItem("vigil_token", authToken);
     localStorage.setItem("apexcare_token", authToken);
+    if (isDemoUser) {
+      localStorage.setItem("vigil_is_demo", "true");
+      setIsDemo(true);
+    } else {
+      localStorage.removeItem("vigil_is_demo");
+      setIsDemo(false);
+    }
     setToken(authToken);
     setUser(authUser);
     if (isNewOrDemo) {
@@ -189,6 +197,8 @@ export default function App() {
   const handleLogout = () => {
     localStorage.removeItem("vigil_token");
     localStorage.removeItem("apexcare_token");
+    localStorage.removeItem("vigil_is_demo");
+    setIsDemo(false);
     setToken(null);
     setUser(null);
     setSelectedTicket(null);
@@ -419,6 +429,7 @@ export default function App() {
         setDarkMode={setDarkMode}
         onLogout={handleLogout}
         onReseed={handleReseed}
+        isDemo={isDemo}
       />
 
       {/* Main View Router */}

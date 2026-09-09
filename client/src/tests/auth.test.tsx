@@ -83,4 +83,45 @@ test("a stored token skips the auth screen", async () => {
   });
   renderApp();
   expect(await screen.findByRole("button", { name: /logout/i })).toBeInTheDocument();
+  // Standard session without demo flag should not show Reset & Reseed button
+  expect(screen.queryByRole("button", { name: /reset & reseed/i })).not.toBeInTheDocument();
 });
+
+test("standard login does not show reseed button, but demo login does", async () => {
+  localStorage.clear();
+  stubFetch({
+    "POST /api/auth/login": () =>
+      jsonResponse({
+        token: "jwt-demo",
+        id: 1,
+        email: "alexandra.vance@apexcare.tech",
+        full_name: "Alexandra Vance",
+        department: "HR Operations",
+        role_title: "Lead Support Specialist",
+      }),
+    "GET /api/auth/me": () =>
+      jsonResponse({
+        id: 1,
+        email: "alexandra.vance@apexcare.tech",
+        full_name: "Alexandra Vance",
+        department: "HR Operations",
+        role_title: "Lead Support Specialist",
+      }),
+    "GET /api/tickets": () => jsonResponse([]),
+  });
+
+  renderApp();
+  // Click the 1-click recruiter demo button
+  const demoBtn = screen.getByRole("button", { name: /launch recruiter demo/i });
+  await userEvent.click(demoBtn);
+
+  expect(await screen.findByRole("button", { name: /logout/i })).toBeInTheDocument();
+  // Reseed button MUST be visible for demo login
+  expect(screen.getByRole("button", { name: /reset & reseed/i })).toBeInTheDocument();
+  expect(localStorage.getItem("vigil_is_demo")).toBe("true");
+
+  // Logging out clears the demo flag
+  await userEvent.click(screen.getByRole("button", { name: /logout/i }));
+  expect(localStorage.getItem("vigil_is_demo")).toBeNull();
+});
+

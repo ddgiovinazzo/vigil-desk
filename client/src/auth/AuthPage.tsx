@@ -3,7 +3,7 @@ import { login, register } from "../api";
 import { UserProfile } from "../types";
 
 interface AuthPageProps {
-  onLoginSuccess: (token: string, user: UserProfile, isNewOrDemo?: boolean) => void;
+  onLoginSuccess: (token: string, user: UserProfile, isNewOrDemo?: boolean, isDemo?: boolean) => void;
 }
 
 export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess }) => {
@@ -27,7 +27,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess }) => {
       // Attempt standard login first
       const authData = await login(demoEmail, demoPassword);
       localStorage.setItem("vigil_token", authData.token);
-      onLoginSuccess(authData.token, authData.user, true);
+      localStorage.setItem("vigil_is_demo", "true");
+      onLoginSuccess(authData.token, authData.user, true, true);
     } catch (err) {
       // If account does not exist yet on fresh DB, auto-register then login
       try {
@@ -41,7 +42,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess }) => {
         });
         const authData = await login(demoEmail, demoPassword);
         localStorage.setItem("vigil_token", authData.token);
-        onLoginSuccess(authData.token, authData.user, true);
+        localStorage.setItem("vigil_is_demo", "true");
+        onLoginSuccess(authData.token, authData.user, true, true);
       } catch (regErr: any) {
         setError(regErr.message || "Failed to initialize demo account");
       }
@@ -68,11 +70,13 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess }) => {
         // Auto-login after registration
         const authData = await login(email, password);
         localStorage.setItem("vigil_token", authData.token);
-        onLoginSuccess(authData.token, authData.user, true);
+        localStorage.removeItem("vigil_is_demo");
+        onLoginSuccess(authData.token, authData.user, true, false);
       } else {
         const authData = await login(email, password);
         localStorage.setItem("vigil_token", authData.token);
-        onLoginSuccess(authData.token, authData.user, false);
+        localStorage.removeItem("vigil_is_demo");
+        onLoginSuccess(authData.token, authData.user, false, false);
       }
     } catch (err: any) {
       setError(err.message || "Authentication failed");
