@@ -12,7 +12,11 @@ export interface Conversation {
   id: number;
   title: string;
   created_at: string;
+  updated_at?: string;
+  message_count?: number;
+  last_message?: string | null;
 }
+
 
 export interface Ticket {
   id: number;
@@ -98,6 +102,7 @@ export interface RunSummary {
 }
 
 export interface ConversationHistory {
+  conversation?: Conversation;
   messages: ChatMessage[];
   runs: RunSummary[];
 }

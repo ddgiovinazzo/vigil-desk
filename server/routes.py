@@ -1062,6 +1062,164 @@ def get_knowledge_base_file(filename):
 
 
 # --------------------------------------------------------------------------
+# Conversation management
+# --------------------------------------------------------------------------
+
+def _serialize_conversation(conv):
+    """Serialize a Conversation row with metadata for chat history views."""
+    last_msg = (
+        Message.query.filter_by(conversation_id=conv.id)
+        .order_by(Message.id.desc())
+        .first()
+    )
+    msg_count = Message.query.filter_by(conversation_id=conv.id).count()
+    return {
+        "id": conv.id,
+        "title": conv.title or "New conversation",
+        "created_at": conv.created_at.isoformat() if conv.created_at else None,
+        "updated_at": conv.updated_at.isoformat() if conv.updated_at else (conv.created_at.isoformat() if conv.created_at else None),
+        "message_count": msg_count,
+        "last_message": last_msg.content[:100] if last_msg else None,
+    }
+
+
+def _generate_chat_title(message_text: str) -> str:
+    """Ask the agent/LLM to generate a concise, human-friendly 3-5 word title for a chat inquiry.
+    Falls back gracefully to a sanitized inquiry snippet if LLM is unavailable or offline.
+    """
+    try:
+        title_prompt = (
+            "Summarize the following user inquiry into a concise 3 to 5 word title for a chat conversation. "
+            "Do not include quotes, periods, or explanatory words. Return ONLY the 3 to 5 words title.\n\n"
+            f"User inquiry: {message_text[:300]}"
+        )
+        res = generate([{"role": "user", "content": title_prompt}], tools=[])
+        raw_title = (res.get("content") or "").strip()
+        # Clean quotes and markdown
+        raw_title = re.sub(r'["`*#]', '', raw_title).strip()
+        raw_title = raw_title.split("\n")[0].strip()
+        if raw_title and 3 <= len(raw_title) <= 60:
+            return raw_title
+    except Exception as e:
+        current_app.logger.warning(f"Could not generate chat title via LLM: {e}")
+
+    # Fallback heuristic: take first 4-5 words
+    clean = re.sub(r"[^\w\s-]", "", message_text).strip()
+    words = clean.split()
+    if not words:
+        return "New conversation"
+    short_title = " ".join(words[:5])
+    return short_title[:45].capitalize()
+
+
+@api_bp.get("/conversations")
+@require_auth
+def list_conversations():
+    """List all conversations for the authenticated user, ordered by most recent."""
+    q = request.args.get("q", "").strip().lower()
+    query = Conversation.query.filter_by(user_id=g.user.id)
+    if q:
+        query = query.filter(Conversation.title.ilike(f"%{q}%"))
+    convs = query.order_by(Conversation.updated_at.desc(), Conversation.created_at.desc()).all()
+    return jsonify([_serialize_conversation(c) for c in convs])
+
+
+@api_bp.post("/conversations")
+@require_auth
+def create_conversation():
+    """Explicitly create a new conversation thread."""
+    data = request.get_json(silent=True) or {}
+    title = (data.get("title") or "").strip() or "New conversation"
+    conv = Conversation(user_id=g.user.id, title=title)
+    db.session.add(conv)
+    db.session.commit()
+    return jsonify(_serialize_conversation(conv)), 201
+
+
+@api_bp.get("/conversations/<int:conv_id>/messages")
+@require_auth
+def get_conversation_messages(conv_id):
+    """Fetch all messages and runs for a specific conversation."""
+    conv = Conversation.query.filter_by(id=conv_id, user_id=g.user.id).first()
+    if not conv:
+        return jsonify({"error": "Conversation not found"}), 404
+
+    messages = (
+        Message.query.filter_by(conversation_id=conv.id)
+        .order_by(Message.id.asc())
+        .all()
+    )
+    runs = (
+        Run.query.filter_by(conversation_id=conv.id)
+        .order_by(Run.id.asc())
+        .all()
+    )
+
+    return jsonify({
+        "conversation": _serialize_conversation(conv),
+        "messages": [
+            {
+                "id": m.id,
+                "role": m.role,
+                "content": m.content,
+                "created_at": m.created_at.isoformat() if m.created_at else None,
+            }
+            for m in messages
+        ],
+        "runs": [
+            {
+                "id": r.id,
+                "user_message_id": r.user_message_id,
+                "status": r.status,
+                "total_latency_ms": r.total_latency_ms,
+            }
+            for r in runs
+        ],
+    })
+
+
+@api_bp.patch("/conversations/<int:conv_id>")
+@require_auth
+def update_conversation(conv_id):
+    """Rename a conversation's title."""
+    conv = Conversation.query.filter_by(id=conv_id, user_id=g.user.id).first()
+    if not conv:
+        return jsonify({"error": "Conversation not found"}), 404
+
+    data = request.get_json(silent=True) or {}
+    new_title = (data.get("title") or "").strip()
+    if not new_title:
+        return jsonify({"error": "title cannot be empty"}), 400
+
+    conv.title = new_title[:255]
+    conv.updated_at = utcnow()
+    db.session.commit()
+    return jsonify(_serialize_conversation(conv))
+
+
+@api_bp.delete("/conversations/<int:conv_id>")
+@require_auth
+def delete_conversation(conv_id):
+    """Delete a conversation and cleanly cascade-delete its runs, steps, pending actions, and messages."""
+    conv = Conversation.query.filter_by(id=conv_id, user_id=g.user.id).first()
+    if not conv:
+        return jsonify({"error": "Conversation not found"}), 404
+
+    # Find associated runs
+    run_ids = [r.id for r in Run.query.filter_by(conversation_id=conv.id).all()]
+    if run_ids:
+        RunStep.query.filter(RunStep.run_id.in_(run_ids)).delete(synchronize_session=False)
+        PendingAction.query.filter(PendingAction.run_id.in_(run_ids)).delete(synchronize_session=False)
+        Run.query.filter(Run.id.in_(run_ids)).delete(synchronize_session=False)
+
+    Message.query.filter_by(conversation_id=conv.id).delete(synchronize_session=False)
+    db.session.delete(conv)
+    db.session.commit()
+
+    return jsonify({"success": True, "id": conv_id}), 200
+
+
+# --------------------------------------------------------------------------
 # Pip chat widget
 # --------------------------------------------------------------------------
 
@@ -1123,11 +1281,35 @@ def pip_chat():
 
     tickets_context = f"\n\nCURRENT_ACTIVE_TICKETS:\n{json.dumps(tickets_summary, indent=2)}"
 
-    # All chat turns share one conversation per user (created on first chat).
-    conv = Conversation.query.filter_by(user_id=g.user.id).first()
+    # Load or create conversation for this user.
+    conv_id = data.get("conversation_id")
+    conv = None
+    if conv_id:
+        conv = Conversation.query.filter_by(id=conv_id, user_id=g.user.id).first()
     if not conv:
-        conv = Conversation(user_id=g.user.id, title="Pip Chat")
+        conv = Conversation.query.filter_by(user_id=g.user.id).order_by(Conversation.updated_at.desc(), Conversation.created_at.desc()).first()
+    if not conv:
+        conv = Conversation(user_id=g.user.id, title="New conversation")
         db.session.add(conv)
+        db.session.commit()
+
+    # If title is still default, generate one with agent (or assign draft title for drafting)
+    is_draft_mode = bool(data.get("is_draft") is True or data.get("mode") == "draft")
+    if is_draft_mode:
+        ticket_id = data.get("ticket_id")
+        t_row = db.session.get(Ticket, ticket_id) if ticket_id else None
+        t_label = t_row.ticket_number if t_row and t_row.ticket_number else "Ticket"
+        conv.title = f"Draft {t_label}"
+        conv.updated_at = utcnow()
+        db.session.commit()
+    elif conv.title in ("New conversation", "Pip Chat", "", None):
+        generated_title = _generate_chat_title(message_text)
+        if generated_title:
+            conv.title = generated_title
+            conv.updated_at = utcnow()
+            db.session.commit()
+    else:
+        conv.updated_at = utcnow()
         db.session.commit()
 
     msg = Message(conversation_id=conv.id, role="user", content=message_text)
@@ -1406,6 +1588,8 @@ def pip_chat():
             "status": "completed",
             "run_id": run.id,
             "route": route_flag,
+            "conversation_id": conv.id,
+            "conversation_title": conv.title,
         }
         if route_flag == "DRAFT" and target_ticket and extracted_draft:
             resp_payload["draft_reply"] = extracted_draft
@@ -1423,12 +1607,24 @@ def pip_chat():
             run.status = "stopped"
             _stamp_total_latency(run)
             db.session.commit()
-            return jsonify({"reply": "Response stopped by user.", "status": "stopped", "run_id": run.id}), 499
+            return jsonify({
+                "reply": "Response stopped by user.",
+                "status": "stopped",
+                "run_id": run.id,
+                "conversation_id": conv.id if "conv" in locals() and conv else None,
+                "conversation_title": conv.title if "conv" in locals() and conv else None,
+            }), 499
 
         db.session.refresh(run)
         if run.status == "stopped":
             current_app.logger.info("Chat generation aborted: run status set to stopped.")
-            return jsonify({"reply": "Response stopped by user.", "status": "stopped", "run_id": run.id}), 499
+            return jsonify({
+                "reply": "Response stopped by user.",
+                "status": "stopped",
+                "run_id": run.id,
+                "conversation_id": conv.id if "conv" in locals() and conv else None,
+                "conversation_title": conv.title if "conv" in locals() and conv else None,
+            }), 499
 
         # Log the exact failure for your own debugging and telemetry
         current_app.logger.error(f"Chat LLM generation failed: {str(e)}")
@@ -1445,4 +1641,10 @@ def pip_chat():
         )
 
         # Return a 200 so the frontend chat UI doesn't crash, but displays the error text smoothly
-        return jsonify({"reply": reply_text, "run_id": run.id})
+        return jsonify({
+            "reply": reply_text,
+            "run_id": run.id,
+            "conversation_id": conv.id if "conv" in locals() and conv else None,
+            "conversation_title": conv.title if "conv" in locals() and conv else None,
+        })
+

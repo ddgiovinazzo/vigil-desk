@@ -7,6 +7,8 @@ import {
   deriveAgentProgress,
 } from "./AgentProgress";
 import { PipAvatar, PipStatusState } from "./PipAvatar";
+import { api } from "../api";
+import { ChatHistoryView } from "./ChatHistoryView";
 
 interface AICopilotWidgetProps {
   user: UserProfile;
@@ -139,6 +141,9 @@ export const AICopilotWidget: React.FC<AICopilotWidgetProps> = ({
     },
   ]);
   const [inputMessage, setInputMessage] = useState("");
+  const [currentConversationId, setCurrentConversationId] = useState<number | null>(null);
+  const [currentConversationTitle, setCurrentConversationTitle] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"chat" | "history">("chat");
   const [isBotThinking, setIsBotThinking] = useState(false);
   const [isBotTalking, setIsBotTalking] = useState(false);
   const [activeRunId, setActiveRunId] = useState<number | null>(null);
@@ -312,6 +317,7 @@ export const AICopilotWidget: React.FC<AICopilotWidgetProps> = ({
           message: textToSend,
           ticket_id: activeTicket?.id,
           is_draft: isDraft,
+          conversation_id: currentConversationId || undefined,
         }),
         signal: controller.signal,
       });
@@ -323,6 +329,12 @@ export const AICopilotWidget: React.FC<AICopilotWidgetProps> = ({
         const data = await res.json();
         completedRunId = data.run_id;
         setActiveRunId(data.run_id);
+        if (data.conversation_id) {
+          setCurrentConversationId(data.conversation_id);
+        }
+        if (data.conversation_title) {
+          setCurrentConversationTitle(data.conversation_title);
+        }
 
         const rawReply = data.reply || "";
         const isRawDraftJson = rawReply.trim().startsWith("{") && rawReply.includes("draft_replies");
@@ -429,7 +441,48 @@ export const AICopilotWidget: React.FC<AICopilotWidgetProps> = ({
     }
   };
 
+  const handleSelectConversation = async (convId: number) => {
+    try {
+      setCurrentConversationId(convId);
+      setViewMode("chat");
+      setIsBotThinking(false);
+      setStatusOverride(null);
+
+      const historyData = await api.getHistory(convId);
+      if (historyData) {
+        if (historyData.conversation?.title) {
+          setCurrentConversationTitle(historyData.conversation.title);
+        }
+        if (historyData.messages && historyData.messages.length > 0) {
+          const loadedMessages: ChatMessage[] = historyData.messages.map((m) => ({
+            id: m.id.toString(),
+            sender: m.role === "user" ? "user" : "pip",
+            text: m.content,
+            timestamp: m.created_at
+              ? new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+              : "",
+          }));
+          setChatMessages(loadedMessages);
+        } else {
+          setChatMessages([
+            {
+              id: Date.now().toString(),
+              sender: "pip",
+              text: `Ready to continue our chat! Ask me anything about policies, benefits, or your active tickets.`,
+              timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            },
+          ]);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load conversation history:", err);
+    }
+  };
+
   const handleNewConversation = () => {
+    setCurrentConversationId(null);
+    setCurrentConversationTitle(null);
+    setViewMode("chat");
     setChatMessages([
       {
         id: "1",
@@ -460,20 +513,67 @@ export const AICopilotWidget: React.FC<AICopilotWidgetProps> = ({
           </div>
         </div>
 
-        {/* New Conversation Plus Button */}
-        <button
-          onClick={handleNewConversation}
-          title="Start New Conversation"
-          className="p-2 rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition cursor-pointer flex items-center justify-center shrink-0 border border-slate-200/60 dark:border-slate-700/60 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-        </button>
+        {/* Action Buttons: History & New Conversation */}
+        <div className="flex items-center space-x-1.5 shrink-0">
+          <button
+            onClick={() => setViewMode(viewMode === "history" ? "chat" : "history")}
+            title={viewMode === "history" ? "Back to Chat" : "Chat History"}
+            aria-label="Chat History"
+            className={`p-2 rounded-xl transition cursor-pointer flex items-center justify-center border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              viewMode === "history"
+                ? "bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 border-blue-300 dark:border-blue-700"
+                : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border-slate-200/60 dark:border-slate-700/60"
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
+
+          <button
+            onClick={handleNewConversation}
+            title="Start New Conversation"
+            aria-label="Start New Conversation"
+            className="p-2 rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition cursor-pointer flex items-center justify-center border border-slate-200/60 dark:border-slate-700/60 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+        </div>
       </div>
 
-      {/* Content Area - Live AI Chatbot Panel */}
-      <div className="flex-1 overflow-hidden p-4 flex flex-col min-h-0">
+      {/* Main View: History Panel vs Active Chat */}
+      {viewMode === "history" ? (
+        <ChatHistoryView
+          currentConversationId={currentConversationId}
+          onSelectConversation={handleSelectConversation}
+          onNewConversation={handleNewConversation}
+          onClose={() => setViewMode("chat")}
+        />
+      ) : (
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+          {currentConversationTitle && (
+            <div className="px-4 py-1.5 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800/60 flex items-center justify-between text-[11px]">
+              <span className="text-slate-500 dark:text-slate-400 font-medium truncate flex items-center gap-1.5 min-w-0">
+                <svg className="w-3.5 h-3.5 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                <span className="font-semibold text-slate-700 dark:text-slate-300 truncate">
+                  {currentConversationTitle}
+                </span>
+              </span>
+              <button
+                onClick={() => setViewMode("history")}
+                className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline shrink-0 ml-2 font-medium cursor-pointer"
+              >
+                All Chats
+              </button>
+            </div>
+          )}
+
+          {/* Content Area - Live AI Chatbot Panel */}
+          <div className="flex-1 overflow-hidden p-4 flex flex-col min-h-0">
         <div className="flex-1 flex flex-col min-h-0">
           {/* Chat Messages Timeline */}
           <div className="flex-1 space-y-3 overflow-y-auto custom-scrollbar pr-1 min-h-0 pb-2">
@@ -600,6 +700,8 @@ export const AICopilotWidget: React.FC<AICopilotWidgetProps> = ({
           </div>
         </div>
       </div>
+    </div>
+      )}
     </div>
   );
 };
